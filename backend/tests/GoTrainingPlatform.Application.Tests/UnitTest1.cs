@@ -1,4 +1,4 @@
-﻿namespace GoTrainingPlatform.Application.Tests;
+namespace GoTrainingPlatform.Application.Tests;
 
 public class UnitTest1
 {

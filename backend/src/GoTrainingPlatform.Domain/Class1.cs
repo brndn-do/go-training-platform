@@ -1,4 +1,4 @@
-﻿namespace GoTrainingPlatform.Domain;
+namespace GoTrainingPlatform.Domain;
 
 public class Class1
 {

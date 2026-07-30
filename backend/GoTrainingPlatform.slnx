@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/GoSharp/GoSharp.csproj" />
     <Project Path="src/GoTrainingPlatform.Api/GoTrainingPlatform.Api.csproj" />
     <Project Path="src/GoTrainingPlatform.Application/GoTrainingPlatform.Application.csproj" />
     <Project Path="src/GoTrainingPlatform.Domain/GoTrainingPlatform.Domain.csproj" />
