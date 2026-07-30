@@ -1,0 +1,23 @@
+# .NET
+bin/
+obj/
+*.user
+
+# Node / frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Env
+.env
+
+# KataGo model files (large binaries, dropped locally per README)
+engine/models/*
+!engine/models/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

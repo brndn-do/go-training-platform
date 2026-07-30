@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GoTrainingPlatform.Api/GoTrainingPlatform.Api.csproj" />
+    <Project Path="src/GoTrainingPlatform.Application/GoTrainingPlatform.Application.csproj" />
+    <Project Path="src/GoTrainingPlatform.Domain/GoTrainingPlatform.Domain.csproj" />
+    <Project Path="src/GoTrainingPlatform.Infrastructure/GoTrainingPlatform.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GoTrainingPlatform.Application.Tests/GoTrainingPlatform.Application.Tests.csproj" />
+  </Folder>
+</Solution>
