@@ -2,14 +2,14 @@ using GoSharp = GoSharpCore;
 
 namespace GoTrainingPlatform.Domain;
 
-public class Game
+public class GoPosition
 {
   // Standard komi for Chinese ruleset
   private const double Komi = 7.5;
   private GoSharp.Game goSharpGame;
   private readonly int boardSize;
 
-  public Game(int boardSize)
+  public GoPosition(int boardSize)
   {
     ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(boardSize, 0);
     GoSharp.GameInfo gi = new() { Komi = Komi, BoardSizeX = boardSize, BoardSizeY = boardSize };
