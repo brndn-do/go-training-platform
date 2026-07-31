@@ -11,6 +11,7 @@ public class Game
 
   public Game(int boardSize)
   {
+    ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(boardSize, 0);
     GoSharp.GameInfo gi = new() { Komi = Komi, BoardSizeX = boardSize, BoardSizeY = boardSize };
     goSharpGame = new(gi);
     this.boardSize = boardSize;
@@ -47,8 +48,8 @@ public class Game
   /// Gets the state of the board, with each coordinate being <c>Empty</c>, <c>Black</c>, or <c>White</c>.
   /// </summary>
   /// <returns>
-  /// A 2D rectangular array of size boardSize x boardSize representing coordinates of the
-  /// board, indexed the same way as <c>TryMakeMove</c>, with three possible values: <c>Empty</c>, <c>Black</c>, or <c>White</c>.
+  /// A 2D rectangular array of size boardSize x boardSize representing a snapshot of the current board state,
+  /// with coordinates indexed the same way as <c>TryMakeMove</c>, with three possible values: <c>Empty</c>, <c>Black</c>, or <c>White</c>.
   /// </returns>
   public Content[,] GetBoard()
   {

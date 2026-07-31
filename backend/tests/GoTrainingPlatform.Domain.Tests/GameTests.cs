@@ -3,6 +3,13 @@ namespace GoTrainingPlatform.Domain.Tests;
 public class GameTests
 {
   [Fact]
+  public void Constructor_NonPositiveBoardSize_ThrowsArgumentOutOfRangeException()
+  {
+    Assert.Throws<ArgumentOutOfRangeException>(() => new Game(0));
+    Assert.Throws<ArgumentOutOfRangeException>(() => new Game(-1));
+  }
+  
+  [Fact]
   public void TryMakeMove_LegalMove_ReturnsTrue()
   {
     var game = new Game(9);
