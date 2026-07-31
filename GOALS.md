@@ -8,7 +8,8 @@ Play Go (Baduk/Weiqi) against bots of varying strength, with optional live hints
 
 - Play a full game of Go against a KataGo-powered bot on a single board size (9x9 first)
 - Choose bot strength before starting a game (limit KataGo visits/playouts)
-- Correct core rules enforcement: legal moves, captures, ko, pass, resign, Chinese scoring.
+- Correct core rules enforcement: legal moves, captures, ko, pass, resign (with a clear winner), and end-of-game detection (two consecutive passes ends the game)
+- No automated final scoring — players count their own score at game end; an on-request KataGo score/ownership estimate (likely piggybacking on the existing hint feature) is available as an aid, not an authoritative result
 - Undo: retract your last move (and the bot's response) during a game
 - Live hint: ask the engine for a single suggested move and a win-rate estimate at any point during play
 - User accounts (register/login) so a game can be saved and resumed later
@@ -30,4 +31,5 @@ Play Go (Baduk/Weiqi) against bots of varying strength, with optional live hints
 - Chat or other social features
 - Teaching content beyond in-game hints (no joseki dictionary, no interactive lessons)
 - Supporting multiple rulesets (only Chinese)
+- Automated final scoring / dead-stone-marking negotiation — the hardest, most dispute-prone part of Go software to get right, and not needed for a training platform where players can just count for themselves
 - Production-grade scaling/HA — this is a learning/portfolio project, not a product with real users
