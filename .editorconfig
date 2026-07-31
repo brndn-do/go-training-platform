@@ -27,5 +27,4 @@ generated_code = true
 # Doc analysis is intentionally off for test projects (see Directory.Build.props) —
 # don't warn about the thing we did on purpose.
 [backend/tests/**/*.cs]
-dotnet_diagnostic.SA0001.severity = none
 dotnet_diagnostic.SA1600.severity = none
