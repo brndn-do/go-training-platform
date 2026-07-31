@@ -9,7 +9,7 @@ public class GoPositionTests
   {
     Assert.Throws<ArgumentOutOfRangeException>(() => new GoPosition(boardSize));
   }
-  
+
   [Fact]
   public void TryMakeMove_LegalMove_ReturnsTrue()
   {
@@ -85,7 +85,7 @@ public class GoPositionTests
     Assert.Equal(9 * 9, board.Length);
 
     bool allEmpty = board.Cast<Content>().All(x => x == Content.Empty);
-    Assert.True(allEmpty); 
+    Assert.True(allEmpty);
   }
 
   [Fact]
@@ -104,7 +104,7 @@ public class GoPositionTests
     Assert.Equal(9 * 9, board.Length);
     Assert.Equal(Content.Black, enumerable.First());
     Assert.Equal(Content.White, enumerable.Last());
-    foreach (var content in enumerable.Skip(1).Take(enumerable.Count() -2))
+    foreach (var content in enumerable.Skip(1).Take(enumerable.Count() - 2))
     {
       Assert.Equal(Content.Empty, content);
     }
@@ -131,5 +131,28 @@ public class GoPositionTests
     {
       Assert.Equal(Content.Empty, content);
     }
+  }
+
+  [Fact]
+  public void Pass_AlternatesTurnWithoutChangingBoard()
+  {
+    var game = new GoPosition(9);
+
+    var turn1 = game.Turn;
+    var board1 = game.GetBoard();
+
+    game.Pass();
+
+    var turn2 = game.Turn;
+    var board2 = game.GetBoard();
+
+    Assert.NotEqual(turn1, turn2);
+
+    Assert.NotSame(board1, board2);
+
+    var enumerable1 = board1.Cast<Content>();
+    var enumerable2 = board2.Cast<Content>();
+
+    Assert.Equal(enumerable1, enumerable2);
   }
 }
