@@ -4,5 +4,5 @@ public enum Content
 {
   Empty,
   Black,
-  White
+  White,
 }
