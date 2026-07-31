@@ -2,11 +2,12 @@ namespace GoTrainingPlatform.Domain.Tests;
 
 public class GameTests
 {
-  [Fact]
-  public void Constructor_NonPositiveBoardSize_ThrowsArgumentOutOfRangeException()
+  [Theory]
+  [InlineData(0)]
+  [InlineData(-1)]
+  public void Constructor_NonPositiveBoardSize_ThrowsArgumentOutOfRangeException(int boardSize)
   {
-    Assert.Throws<ArgumentOutOfRangeException>(() => new Game(0));
-    Assert.Throws<ArgumentOutOfRangeException>(() => new Game(-1));
+    Assert.Throws<ArgumentOutOfRangeException>(() => new Game(boardSize));
   }
   
   [Fact]
