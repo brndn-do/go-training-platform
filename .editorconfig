@@ -1,0 +1,31 @@
+root = true
+
+[*.cs]
+indent_style = space
+indent_size = 2
+tab_width = 2
+
+# No corporate copyright header needed for a personal project.
+dotnet_diagnostic.SA1633.severity = none
+
+# Predates file-scoped namespaces; conflicts with that convention, not a real issue.
+dotnet_diagnostic.SA1200.severity = none
+
+# Noisy given modern IDE tooling; not adopting `this.`-prefixing everywhere.
+dotnet_diagnostic.SA1101.severity = none
+
+# Predates target-typed `new()`; false positive on that syntax.
+dotnet_diagnostic.SA1000.severity = none
+
+# Duplicates SA1600 (which also checks doc content, not just presence) — one source of truth.
+dotnet_diagnostic.CS1591.severity = none
+
+# Vendored third-party source — not ours to reformat or lint.
+[backend/src/GoSharp/**/*.cs]
+generated_code = true
+
+# Doc analysis is intentionally off for test projects (see Directory.Build.props) —
+# don't warn about the thing we did on purpose.
+[backend/tests/**/*.cs]
+dotnet_diagnostic.SA0001.severity = none
+dotnet_diagnostic.SA1600.severity = none

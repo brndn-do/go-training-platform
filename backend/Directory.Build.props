@@ -1,0 +1,13 @@
+<Project>
+
+  <!-- Doc-comment requirements apply to production code, not the vendored GoSharp
+       (third-party) or test projects (test names carry the meaning instead). -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' != 'GoSharp' and !$(MSBuildProjectName.EndsWith('.Tests'))">
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'GoSharp'">
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>
