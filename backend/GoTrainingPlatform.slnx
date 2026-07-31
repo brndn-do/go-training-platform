@@ -8,5 +8,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/GoTrainingPlatform.Application.Tests/GoTrainingPlatform.Application.Tests.csproj" />
+    <Project Path="tests/GoTrainingPlatform.Domain.Tests/GoTrainingPlatform.Domain.Tests.csproj" />
   </Folder>
 </Solution>

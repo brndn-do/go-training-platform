@@ -21,3 +21,5 @@ engine/models/*
 Thumbs.db
 .vscode/
 .idea/
+
+CLAUDE.md
