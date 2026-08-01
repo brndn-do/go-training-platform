@@ -10,8 +10,6 @@ namespace GoTrainingPlatform.Domain;
 /// </summary>
 public class GoPosition
 {
-  // Standard komi for Chinese ruleset
-  private const double Komi = 7.5;
   private readonly int boardSize;
   private GoSharp.Game goSharpGame;
 
@@ -20,13 +18,20 @@ public class GoPosition
   /// of the given size, with Black to play first.
   /// </summary>
   /// <param name="boardSize">The width and height of the (square) board.</param>
+  /// <param name="komi">
+  /// The komi to report to the underlying rules engine. Has no effect on legality,
+  /// captures, or board state — <see cref="GoPosition"/> never scores a game itself —
+  /// but is accepted so callers (namely <c>Game</c>) can keep the engine's copy
+  /// consistent with the value used elsewhere (e.g. when requesting a KataGo estimate).
+  /// Defaults to the standard Chinese-ruleset value.
+  /// </param>
   /// <exception cref="ArgumentOutOfRangeException">
   /// <paramref name="boardSize"/> is zero or negative.
   /// </exception>
-  public GoPosition(int boardSize)
+  public GoPosition(int boardSize, double komi = 7.5)
   {
     ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(boardSize, 0);
-    GoSharp.GameInfo gi = new() { Komi = Komi, BoardSizeX = boardSize, BoardSizeY = boardSize };
+    GoSharp.GameInfo gi = new() { Komi = komi, BoardSizeX = boardSize, BoardSizeY = boardSize };
     goSharpGame = new(gi);
     this.boardSize = boardSize;
   }
