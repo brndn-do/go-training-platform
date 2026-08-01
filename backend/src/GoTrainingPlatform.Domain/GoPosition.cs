@@ -1,3 +1,5 @@
+using GoTrainingPlatform.Domain.Enums;
+
 using GoSharp = GoSharpCore;
 
 namespace GoTrainingPlatform.Domain;
