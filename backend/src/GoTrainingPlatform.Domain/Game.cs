@@ -130,7 +130,15 @@ public class Game
   /// <returns><c>true</c> if the pass was recorded; <c>false</c> otherwise.</returns>
   public bool TryRecordPass()
   {
-    throw new NotImplementedException();
+    if (Outcome is not null)
+    {
+      return false;
+    }
+
+    goPosition.Pass();
+
+    moves.Add(new Move(null));
+    return true;
   }
 
   /// <summary>

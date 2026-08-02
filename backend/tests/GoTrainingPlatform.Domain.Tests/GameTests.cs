@@ -74,4 +74,29 @@ public class GameTests
     // for any finished game, should return false regardless of the move's legality
     Assert.False(success);
   }
+
+  [Fact]
+  public void TryRecordPass_UnfinishedGame_PassesAndReturnsTrue()
+  {
+    Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    bool success = game.TryRecordPass();
+
+    Assert.Equal(Color.White, game.Turn);
+    Assert.True(success);
+  }
+
+  [Theory]
+  [InlineData(Outcome.BotResigned)]
+  [InlineData(Outcome.PlayerResigned)]
+  [InlineData(Outcome.TwoConsecutivePasses)]
+  public void TryRecordPass_FinishedGame_DoesNotPassAndReturnsFalse(Outcome outcome)
+  {
+    Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, outcome);
+
+    bool success = game.TryRecordPass();
+
+    Assert.Equal(Color.Black, game.Turn);
+    Assert.False(success);
+  }
 }
