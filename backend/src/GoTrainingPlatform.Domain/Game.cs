@@ -87,6 +87,11 @@ public class Game
   public Outcome? Outcome { get; private set; }
 
   /// <summary>
+  /// Gets the full, ordered move history.
+  /// </summary>
+  public IReadOnlyList<Move> Moves => moves;
+
+  /// <summary>
   /// Gets the current board state.
   /// </summary>
   /// <returns>
@@ -182,6 +187,34 @@ public class Game
     }
 
     Outcome = resigningColor == PlayerColor ? Enums.Outcome.PlayerResigned : Enums.Outcome.BotResigned;
+    return true;
+  }
+
+  /// <summary>
+  /// Attempts to undo back to before the human player's most recent move — trimming
+  /// that move and, if the bot had already responded to it, the bot's response too.
+  /// Fails for a finished game.
+  /// </summary>
+  /// <param name="newGame">
+  /// A new <see cref="Game"/> reconstructed from the trimmed move history, if
+  /// successful; <c>null</c> otherwise.
+  /// </param>
+  /// <returns>
+  /// <c>true</c> if the game was still in progress and a human move existed in
+  /// history to undo, in which case <paramref name="newGame"/> is the reconstructed
+  /// game; <c>false</c> otherwise, in which case nothing changed.
+  /// </returns>
+  public bool TryUndo(out Game? newGame)
+  {
+    int undoCount = Turn == PlayerColor ? 2 : 1;
+
+    if (Outcome is not null || moves.Count < undoCount)
+    {
+      newGame = null;
+      return false;
+    }
+
+    newGame = new([.. moves.SkipLast(undoCount)], Id, PlayerId, PlayerColor, BoardSize, Outcome, Komi);
     return true;
   }
 
