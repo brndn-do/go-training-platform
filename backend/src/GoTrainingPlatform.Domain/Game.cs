@@ -91,23 +91,30 @@ public class Game
   /// </summary>
   /// <returns>
   /// A 2D rectangular array of size <see cref="BoardSize"/> x <see cref="BoardSize"/>,
-  /// indexed the same way as <see cref="TryRecordMove(int, int)"/>.
+  /// indexed the same way as <see cref="TryRecordMove(Color, int, int)"/>.
   /// </returns>
   public Content[,] GetBoard() => goPosition.GetBoard();
 
   /// <summary>
-  /// Attempts to record a stone placement at the given coordinates for the player
-  /// whose turn it is.
+  /// Attempts to record a stone placement at the given coordinates for
+  /// <paramref name="movingColor"/>.
   /// </summary>
+  /// <param name="movingColor">The color of the player or bot attempting to move.</param>
   /// <param name="x">The X coordinate of the move, zero-indexed.</param>
   /// <param name="y">The Y coordinate of the move, zero-indexed.</param>
   /// <returns>
-  /// <c>true</c> if the game was still in progress and the move was legal, in which
-  /// case it has been recorded; <c>false</c> otherwise, in which case nothing changed.
+  /// <c>true</c> if the game was still in progress, it was <paramref name="movingColor"/>'s
+  /// turn, and the move was legal, in which case it has been recorded; <c>false</c>
+  /// otherwise, in which case nothing changed.
   /// </returns>
-  public bool TryRecordMove(int x, int y)
+  public bool TryRecordMove(Color movingColor, int x, int y)
   {
     if (Outcome is not null)
+    {
+      return false;
+    }
+
+    if (movingColor != Turn)
     {
       return false;
     }
@@ -125,12 +132,21 @@ public class Game
   }
 
   /// <summary>
-  /// Attempts to record a pass. Not yet implemented.
+  /// Attempts to record a pass for <paramref name="passingColor"/>.
   /// </summary>
-  /// <returns><c>true</c> if the pass was recorded; <c>false</c> otherwise.</returns>
-  public bool TryRecordPass()
+  /// <param name="passingColor">The color of the player or bot attempting to pass.</param>
+  /// <returns>
+  /// <c>true</c> if the game was still in progress and it was <paramref name="passingColor"/>'s
+  /// turn, in which case the pass has been recorded; <c>false</c> otherwise.
+  /// </returns>
+  public bool TryRecordPass(Color passingColor)
   {
     if (Outcome is not null)
+    {
+      return false;
+    }
+
+    if (passingColor != Turn)
     {
       return false;
     }
@@ -142,12 +158,25 @@ public class Game
   }
 
   /// <summary>
-  /// Attempts to resign the game. Not yet implemented.
+  /// Attempts to resign the game for <paramref name="resigningColor"/>.
   /// </summary>
-  /// <returns><c>true</c> if the resignation was recorded; <c>false</c> otherwise.</returns>
-  public bool TryRecordResign()
+  /// <param name="resigningColor">
+  /// The color resigning — compared against <see cref="PlayerColor"/>, not <see cref="Turn"/>,
+  /// since resigning is not turn-gated.
+  /// </param>
+  /// <returns>
+  /// <c>true</c> if the game was still in progress, in which case the resignation has
+  /// been recorded; <c>false</c> otherwise.
+  /// </returns>
+  public bool TryRecordResign(Color resigningColor)
   {
-    throw new NotImplementedException();
+    if (Outcome is not null)
+    {
+      return false;
+    }
+
+    Outcome = resigningColor == PlayerColor ? Enums.Outcome.PlayerResigned : Enums.Outcome.BotResigned;
+    return true;
   }
 
   private static Color ToColor(Content content) => content switch

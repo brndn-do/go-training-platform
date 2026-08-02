@@ -11,7 +11,7 @@ public class GameTests
     IReadOnlyList<Move> moveHistory = [move1];
 
     Game game = new(moveHistory, Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
-    bool success = game.TryRecordMove(0, 0); // 0, 0 occupied if replay happened
+    bool success = game.TryRecordMove(Color.White, 0, 0); // 0, 0 occupied if replay happened
 
     Assert.False(success);
     Assert.Equal(Color.White, game.Turn); // current turn should be white if replay happend
@@ -36,25 +36,38 @@ public class GameTests
   }
 
   [Fact]
-  public void TryRecordMove_UnfinishedGameLegalMove_ReturnsTrue()
+  public void TryRecordMove_UnfinishedGameLegalMove_RecordsAndReturnsTrue()
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
 
-    bool success = game.TryRecordMove(0, 0);
+    bool success = game.TryRecordMove(Color.Black, 0, 0);
 
+    Assert.Equal(Color.White, game.Turn);
     Assert.True(success);
   }
 
   [Fact]
-  public void TryRecordMove_UnfinishedGameIllegalMove_ReturnsFalse()
+  public void TryRecordMove_UnfinishedGameIllegalMove_DoesNotRecordAndReturnsFalse()
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
 
-    bool success1 = game.TryRecordMove(0, 0);
-    bool success2 = game.TryRecordMove(0, 0);
+    bool success1 = game.TryRecordMove(Color.Black, 0, 0);
+    bool success2 = game.TryRecordMove(Color.White, 0, 0);
 
+    Assert.Equal(Color.White, game.Turn);
     Assert.True(success1);
     Assert.False(success2);
+  }
+
+  [Fact]
+  public void TryRecordMove_WrongColor_DoesNotRecordAndReturnsFalse()
+  {
+    Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    bool wrongColorAttempt = game.TryRecordMove(Color.White, 0, 0);
+
+    Assert.Equal(Color.Black, game.Turn);
+    Assert.False(wrongColorAttempt);
   }
 
   [Theory]
@@ -64,14 +77,16 @@ public class GameTests
   [InlineData(Outcome.BotResigned, true)]
   [InlineData(Outcome.PlayerResigned, true)]
   [InlineData(Outcome.TwoConsecutivePasses, true)]
-  public void TryRecordMove_FinishedGame_ReturnsFalse(Outcome outcome, bool pointOccupied)
+  public void TryRecordMove_FinishedGame_DoesNotRecordAndReturnsFalse(Outcome outcome, bool pointOccupied)
   {
     IReadOnlyList<Move> moveHistory = pointOccupied ? [new Move(new Coordinates(0, 0))] : [];
     Game game = new(moveHistory, Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, outcome);
+    Color movingColor = pointOccupied ? Color.White : Color.Black;
 
-    bool success = game.TryRecordMove(0, 0);
+    bool success = game.TryRecordMove(movingColor, 0, 0);
 
-    // for any finished game, should return false regardless of the move's legality
+    // for any finished game, should fail and return false regardless of the move's legality
+    Assert.Equal(movingColor, game.Turn);
     Assert.False(success);
   }
 
@@ -80,9 +95,50 @@ public class GameTests
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
 
-    bool success = game.TryRecordPass();
+    bool success = game.TryRecordPass(Color.Black);
 
     Assert.Equal(Color.White, game.Turn);
+    Assert.True(success);
+  }
+
+  [Fact]
+  public void TryRecordPass_WrongColor_DoesNotPassAndReturnsFalse()
+  {
+    Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    bool wrongColorAttempt = game.TryRecordPass(Color.White);
+
+    Assert.Equal(Color.Black, game.Turn);
+    Assert.False(wrongColorAttempt);
+  }
+
+  [Theory]
+  [InlineData(Outcome.BotResigned, false)]
+  [InlineData(Outcome.PlayerResigned, false)]
+  [InlineData(Outcome.TwoConsecutivePasses, false)]
+  [InlineData(Outcome.BotResigned, true)]
+  [InlineData(Outcome.PlayerResigned, true)]
+  [InlineData(Outcome.TwoConsecutivePasses, true)]
+  public void TryRecordPass_FinishedGame_DoesNotPassAndReturnsFalse(Outcome outcome, bool colorIsWrong)
+  {
+    Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, outcome);
+
+    bool success = game.TryRecordPass(colorIsWrong ? Color.White : Color.Black);
+
+    Assert.Equal(Color.Black, game.Turn);
+    Assert.False(success);
+  }
+
+  [Theory]
+  [InlineData(Color.Black, Outcome.PlayerResigned)]
+  [InlineData(Color.White, Outcome.BotResigned)]
+  public void TryRecordResign_UnfinishedGame_ResignsAndReturnsTrue(Color resigningColor, Outcome expectedOutcome)
+  {
+    Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    bool success = game.TryRecordResign(resigningColor);
+
+    Assert.Equal(expectedOutcome, game.Outcome);
     Assert.True(success);
   }
 
@@ -90,13 +146,13 @@ public class GameTests
   [InlineData(Outcome.BotResigned)]
   [InlineData(Outcome.PlayerResigned)]
   [InlineData(Outcome.TwoConsecutivePasses)]
-  public void TryRecordPass_FinishedGame_DoesNotPassAndReturnsFalse(Outcome outcome)
+  public void TryRecordResign_FinishedGame_DoesNotResignAndReturnsFalse(Outcome outcome)
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, outcome);
 
-    bool success = game.TryRecordPass();
+    bool success = game.TryRecordResign(Color.Black);
 
-    Assert.Equal(Color.Black, game.Turn);
+    Assert.Equal(outcome, game.Outcome);
     Assert.False(success);
   }
 }
