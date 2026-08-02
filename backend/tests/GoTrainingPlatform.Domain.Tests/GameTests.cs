@@ -129,6 +129,62 @@ public class GameTests
     Assert.False(success);
   }
 
+  [Fact]
+  public void TryRecordPass_TwoConsecutivePasses_SetsCorrectOutcome()
+  {
+    Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    bool success1 = game.TryRecordPass(Color.Black);
+    bool success2 = game.TryRecordPass(Color.White);
+
+    Assert.True(success1);
+    Assert.True(success2);
+    Assert.Equal(Outcome.TwoConsecutivePasses, game.Outcome);
+  }
+
+  [Fact]
+  public void TryRecordPass_OnePass_DoesNotSetOutcome()
+  {
+    Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    bool success1 = game.TryRecordPass(Color.Black);
+
+    Assert.True(success1);
+    Assert.Null(game.Outcome);
+  }
+
+  [Fact]
+  public void TryRecordPass_TwoNonConsecutivePassesSamePlayer_DoesNotSetOutcome()
+  {
+    Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    bool success1 = game.TryRecordPass(Color.Black);
+    bool success2 = game.TryRecordMove(Color.White, 0, 0);
+    bool success3 = game.TryRecordPass(Color.Black);
+
+    Assert.True(success1);
+    Assert.True(success2);
+    Assert.True(success3);
+    Assert.Null(game.Outcome);
+  }
+
+  [Fact]
+  public void TryRecordPass_TwoNonConsecutivePassestakeDifferentPlayers_DoesNotSetOutcome()
+  {
+    Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    bool success1 = game.TryRecordPass(Color.Black);
+    bool success2 = game.TryRecordMove(Color.White, 0, 0);
+    bool success3 = game.TryRecordMove(Color.Black, 1, 1);
+    bool success4 = game.TryRecordPass(Color.White);
+
+    Assert.True(success1);
+    Assert.True(success2);
+    Assert.True(success3);
+    Assert.True(success4);
+    Assert.Null(game.Outcome);
+  }
+
   [Theory]
   [InlineData(Color.Black, Outcome.PlayerResigned)]
   [InlineData(Color.White, Outcome.BotResigned)]

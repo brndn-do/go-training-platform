@@ -133,6 +133,7 @@ public class Game
 
   /// <summary>
   /// Attempts to record a pass for <paramref name="passingColor"/>.
+  /// If successful and this is the second consecutive pass, ends the game and sets the outcome to <c>TwoConsecutivePasses</c>.
   /// </summary>
   /// <param name="passingColor">The color of the player or bot attempting to pass.</param>
   /// <returns>
@@ -152,8 +153,13 @@ public class Game
     }
 
     goPosition.Pass();
-
     moves.Add(new Move(null));
+
+    if (moves.Count >= 2 && moves.TakeLast(2).All(move => move.Coordinates is null))
+    {
+      Outcome = Enums.Outcome.TwoConsecutivePasses;
+    }
+
     return true;
   }
 
