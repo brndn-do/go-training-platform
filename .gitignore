@@ -2,6 +2,9 @@
 bin/
 obj/
 *.user
+coverage.json
+coverage.cobertura.xml
+coveragereport/
 
 # Node / frontend
 node_modules/
