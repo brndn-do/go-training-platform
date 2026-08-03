@@ -4,21 +4,46 @@ namespace GoTrainingPlatform.Domain;
 
 /// <summary>
 /// The aggregate root for a single game: the player, board size, move history, and
-/// outcome (once finished). Owns a <see cref="GoPosition"/> internally, reconstructed
-/// by replaying move history, to enforce Go-rules legality and finished-game
-/// invariants on every recorded move.
+/// outcome (once finished). Owns a <see cref="GoPosition"/> internally to enforce
+/// Go-rules legality and finished-game invariants on every recorded move.
+/// Every constructor leaves the internal position empty — if <see cref="Moves"/>
+/// was populated from existing history (via the move-history constructor overload,
+/// or by EF Core loading a persisted game), call <see cref="BuildPosition"/>
+/// explicitly afterward, before trusting <see cref="Turn"/> or <see cref="GetBoard"/>.
 /// </summary>
 public class Game
 {
-  private readonly List<Move> moves;
-  private readonly GoPosition goPosition;
+  private List<Move> moves = [];
+  private GoPosition? goPosition;
 
   /// <summary>
-  /// Initializes a new instance of the <see cref="Game"/> class, either as a brand-new
-  /// game (empty <paramref name="moveHistory"/>) or reconstructed from persisted state
-  /// by replaying <paramref name="moveHistory"/> to rebuild the current position.
+  /// Initializes a new instance of the <see cref="Game"/> class.
   /// </summary>
-  /// <param name="moveHistory">The full, ordered move history to replay.</param>
+  /// <param name="id">The game's id.</param>
+  /// <param name="playerId">The id of the human player.</param>
+  /// <param name="playerColor">The color the human player is playing as.</param>
+  /// <param name="boardSize">The width and height of the (square) board.</param>
+  /// <param name="outcome"><c>null</c> if still in progress; otherwise how the game ended.</param>
+  /// <param name="komi">The komi to use for this game and to report to the underlying rules engine.</param>
+  #pragma warning disable IDE0290 // Rich aggregate with EF Core constructor-binding history — not a fit for a primary constructor.
+  public Game(Guid id, Guid playerId, Color playerColor, int boardSize, Outcome? outcome, double komi = 7.5)
+  {
+    Id = id;
+    PlayerId = playerId;
+    PlayerColor = playerColor;
+    BoardSize = boardSize;
+    Komi = komi;
+    Outcome = outcome;
+  }
+  #pragma warning restore IDE0290
+
+  /// <summary>
+  /// Initializes a new instance of the <see cref="Game"/> class with existing move
+  /// history already populated in <see cref="Moves"/>. Does not replay
+  /// <paramref name="moveHistory"/> into the position — call <see cref="BuildPosition"/>
+  /// explicitly afterward, before trusting <see cref="Turn"/> or <see cref="GetBoard"/>.
+  /// </summary>
+  /// <param name="moveHistory">The full, ordered move history to store.</param>
   /// <param name="id">The game's id.</param>
   /// <param name="playerId">The id of the human player.</param>
   /// <param name="playerColor">The color the human player is playing as.</param>
@@ -26,27 +51,9 @@ public class Game
   /// <param name="outcome"><c>null</c> if still in progress; otherwise how the game ended.</param>
   /// <param name="komi">The komi to use for this game and to report to the underlying rules engine.</param>
   public Game(IReadOnlyList<Move> moveHistory, Guid id, Guid playerId, Color playerColor, int boardSize, Outcome? outcome, double komi = 7.5)
+    : this(id, playerId, playerColor, boardSize, outcome, komi)
   {
     moves = [.. moveHistory];
-    goPosition = new GoPosition(boardSize, komi);
-    Id = id;
-    PlayerId = playerId;
-    PlayerColor = playerColor;
-    BoardSize = boardSize;
-    Komi = komi;
-    Outcome = outcome;
-
-    foreach (var move in moves)
-    {
-      if (move.Coordinates is null)
-      {
-        goPosition.Pass();
-      }
-      else
-      {
-        goPosition.TryMakeMove(move.Coordinates.X, move.Coordinates.Y);
-      }
-    }
   }
 
   /// <summary>
@@ -67,7 +74,7 @@ public class Game
   /// <summary>
   /// Gets the color of the player whose turn it is to play.
   /// </summary>
-  public Color Turn => ToColor(goPosition.Turn);
+  public Color Turn => ToColor(RequirePosition().Turn);
 
   /// <summary>
   /// Gets the size of the board where size = width = height.
@@ -98,7 +105,32 @@ public class Game
   /// A 2D rectangular array of size <see cref="BoardSize"/> x <see cref="BoardSize"/>,
   /// indexed the same way as <see cref="TryRecordMove(Color, int, int)"/>.
   /// </returns>
-  public Content[,] GetBoard() => goPosition.GetBoard();
+  public Content[,] GetBoard() => RequirePosition().GetBoard();
+
+  /// <summary>
+  /// Rebuilds the internal <see cref="GoPosition"/> from scratch by replaying every
+  /// entry in <see cref="Moves"/>, in order. Must be called explicitly whenever
+  /// <see cref="Moves"/> was populated from existing history rather than built up via
+  /// <see cref="TryRecordMove"/>/<see cref="TryRecordPass"/> — this includes the
+  /// move-history constructor overload and EF Core's own materialization when
+  /// loading a persisted game, neither of which triggers a replay on its own.
+  /// </summary>
+  public void BuildPosition()
+  {
+    goPosition = new GoPosition(BoardSize, Komi);
+
+    foreach (var move in moves)
+    {
+      if (move.Coordinates is null)
+      {
+        goPosition.Pass();
+      }
+      else
+      {
+        goPosition.TryMakeMove(move.Coordinates.X, move.Coordinates.Y);
+      }
+    }
+  }
 
   /// <summary>
   /// Attempts to record a stone placement at the given coordinates for
@@ -124,14 +156,14 @@ public class Game
       return false;
     }
 
-    bool legal = goPosition.TryMakeMove(x, y);
+    bool legal = RequirePosition().TryMakeMove(x, y);
     if (!legal)
     {
       return false;
     }
 
     Coordinates coord = new(x, y);
-    Move move = new(coord);
+    Move move = new(coord, moves.Count);
     moves.Add(move);
     return true;
   }
@@ -157,8 +189,8 @@ public class Game
       return false;
     }
 
-    goPosition.Pass();
-    moves.Add(new Move(null));
+    RequirePosition().Pass();
+    moves.Add(new Move(null, moves.Count));
 
     if (moves.Count >= 2 && moves.TakeLast(2).All(move => move.Coordinates is null))
     {
@@ -192,29 +224,28 @@ public class Game
 
   /// <summary>
   /// Attempts to undo back to before the human player's most recent move — trimming
-  /// that move and, if the bot had already responded to it, the bot's response too.
-  /// Fails for a finished game.
+  /// that move and, if the bot had already responded to it, the bot's response too,
+  /// then rebuilding the position via <see cref="BuildPosition"/>. Mutates this
+  /// instance in place. Fails for a finished game.
   /// </summary>
-  /// <param name="newGame">
-  /// A new <see cref="Game"/> reconstructed from the trimmed move history, if
-  /// successful; <c>null</c> otherwise.
-  /// </param>
   /// <returns>
   /// <c>true</c> if the game was still in progress and a human move existed in
-  /// history to undo, in which case <paramref name="newGame"/> is the reconstructed
-  /// game; <c>false</c> otherwise, in which case nothing changed.
+  /// history to undo, in which case the trim and rebuild have been applied;
+  /// <c>false</c> otherwise, in which case nothing changed.
   /// </returns>
-  public bool TryUndo(out Game? newGame)
+  public bool TryUndo()
   {
     int undoCount = Turn == PlayerColor ? 2 : 1;
 
     if (Outcome is not null || moves.Count < undoCount)
     {
-      newGame = null;
       return false;
     }
 
-    newGame = new([.. moves.SkipLast(undoCount)], Id, PlayerId, PlayerColor, BoardSize, Outcome, Komi);
+    moves = [.. moves.SkipLast(undoCount)];
+
+    BuildPosition();
+
     return true;
   }
 
@@ -224,4 +255,7 @@ public class Game
     Content.White => Color.White,
     _ => throw new ArgumentOutOfRangeException(nameof(content)),
   };
+
+  private GoPosition RequirePosition() =>
+    goPosition ?? throw new InvalidOperationException("Game.BuildPosition was never called.");
 }

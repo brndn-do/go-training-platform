@@ -5,55 +5,71 @@ namespace GoTrainingPlatform.Domain.Tests;
 public class GameTests
 {
   [Fact]
-  public void Constructor_NonEmptyMoveHistory_ReplaysGame()
+  public void Constructor_MoveHistory_StoresMovesWithoutReplaying()
   {
-    Move move1 = new(new Coordinates(0, 0));
-    IReadOnlyList<Move> moveHistory = [move1];
+    IReadOnlyList<Move> moveHistory = [new Move(new Coordinates(0, 0), 0), new Move(null, 1)];
 
     Game game = new(moveHistory, Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
+
+    Assert.Equal(moveHistory, game.Moves);
+    Assert.Equal(Color.Black, game.Turn); // still the default — constructor does not replay into the position
+  }
+
+  [Fact]
+  public void BuildPosition_NonEmptyMoveHistory_ReplaysGame()
+  {
+    Move move1 = new(new Coordinates(0, 0), 0);
+    IReadOnlyList<Move> moveHistory = [move1];
+    Game game = new(moveHistory, Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    game.BuildPosition();
     bool success = game.TryRecordMove(Color.White, 0, 0); // 0, 0 occupied if replay happened
 
     Assert.False(success);
-    Assert.Equal(Color.White, game.Turn); // current turn should be white if replay happend
-    Assert.Equal(moveHistory, game.Moves);
+    Assert.Equal(Color.White, game.Turn); // current turn should be white if replay happened
   }
 
   [Fact]
-  public void Constructor_MoveHistoryWithOnePass_ReplaysGame()
+  public void BuildPosition_MoveHistoryWithOnePass_ReplaysGame()
   {
-    IReadOnlyList<Move> moveHistory = [new Move(null)];
+    IReadOnlyList<Move> moveHistory = [new Move(null, 0)];
     Game game = new(moveHistory, Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    game.BuildPosition();
 
     Assert.Equal(Color.White, game.Turn);
-    Assert.Equal(moveHistory, game.Moves);
   }
 
   [Fact]
-  public void Constructor_MoveHistoryWithTwoPasses_ReplaysGame()
+  public void BuildPosition_MoveHistoryWithTwoPasses_ReplaysGame()
   {
-    IReadOnlyList<Move> moveHistory = [new Move(null), new Move(null)];
+    IReadOnlyList<Move> moveHistory = [new Move(null, 0), new Move(null, 1)];
     Game game = new(moveHistory, Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
 
+    game.BuildPosition();
+
     Assert.Equal(Color.Black, game.Turn);
-    Assert.Equal(moveHistory, game.Moves);
   }
 
   [Fact]
   public void TryRecordMove_UnfinishedGameLegalMove_RecordsAndReturnsTrue()
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
 
     bool success = game.TryRecordMove(Color.Black, 0, 0);
 
     Assert.Equal(Color.White, game.Turn);
     Assert.True(success);
-    Assert.Equal([new Move(new Coordinates(0, 0))], game.Moves);
+    Assert.Equal([new Move(new Coordinates(0, 0), 0)], game.Moves);
   }
 
   [Fact]
   public void TryRecordMove_UnfinishedGameIllegalMove_DoesNotRecordAndReturnsFalse()
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
 
     bool success1 = game.TryRecordMove(Color.Black, 0, 0);
     bool success2 = game.TryRecordMove(Color.White, 0, 0);
@@ -61,13 +77,14 @@ public class GameTests
     Assert.Equal(Color.White, game.Turn);
     Assert.True(success1);
     Assert.False(success2);
-    Assert.Equal([new Move(new Coordinates(0, 0))], game.Moves);
+    Assert.Equal([new Move(new Coordinates(0, 0), 0)], game.Moves);
   }
 
   [Fact]
   public void TryRecordMove_WrongColor_DoesNotRecordAndReturnsFalse()
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
 
     bool wrongColorAttempt = game.TryRecordMove(Color.White, 0, 0);
 
@@ -85,8 +102,9 @@ public class GameTests
   [InlineData(Outcome.TwoConsecutivePasses, true)]
   public void TryRecordMove_FinishedGame_DoesNotRecordAndReturnsFalse(Outcome outcome, bool pointOccupied)
   {
-    IReadOnlyList<Move> moveHistory = pointOccupied ? [new Move(new Coordinates(0, 0))] : [];
+    IReadOnlyList<Move> moveHistory = pointOccupied ? [new Move(new Coordinates(0, 0), 0)] : [];
     Game game = new(moveHistory, Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, outcome);
+    game.BuildPosition();
     Color movingColor = pointOccupied ? Color.White : Color.Black;
 
     bool success = game.TryRecordMove(movingColor, 0, 0);
@@ -101,18 +119,20 @@ public class GameTests
   public void TryRecordPass_UnfinishedGame_PassesAndReturnsTrue()
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
 
     bool success = game.TryRecordPass(Color.Black);
 
     Assert.Equal(Color.White, game.Turn);
     Assert.True(success);
-    Assert.Equal([new Move(null)], game.Moves);
+    Assert.Equal([new Move(null, 0)], game.Moves);
   }
 
   [Fact]
   public void TryRecordPass_WrongColor_DoesNotPassAndReturnsFalse()
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
 
     bool wrongColorAttempt = game.TryRecordPass(Color.White);
 
@@ -131,6 +151,7 @@ public class GameTests
   public void TryRecordPass_FinishedGame_DoesNotPassAndReturnsFalse(Outcome outcome, bool colorIsWrong)
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, outcome);
+    game.BuildPosition();
 
     bool success = game.TryRecordPass(colorIsWrong ? Color.White : Color.Black);
 
@@ -143,6 +164,7 @@ public class GameTests
   public void TryRecordPass_TwoConsecutivePasses_SetsCorrectOutcome()
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
 
     bool success1 = game.TryRecordPass(Color.Black);
     bool success2 = game.TryRecordPass(Color.White);
@@ -150,25 +172,27 @@ public class GameTests
     Assert.True(success1);
     Assert.True(success2);
     Assert.Equal(Outcome.TwoConsecutivePasses, game.Outcome);
-    Assert.Equal([new Move(null), new Move(null)], game.Moves);
+    Assert.Equal([new Move(null, 0), new Move(null, 1)], game.Moves);
   }
 
   [Fact]
   public void TryRecordPass_OnePass_DoesNotSetOutcome()
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
 
     bool success1 = game.TryRecordPass(Color.Black);
 
     Assert.True(success1);
     Assert.Null(game.Outcome);
-    Assert.Equal([new Move(null)], game.Moves);
+    Assert.Equal([new Move(null, 0)], game.Moves);
   }
 
   [Fact]
   public void TryRecordPass_TwoNonConsecutivePassesSamePlayer_DoesNotSetOutcome()
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
 
     bool success1 = game.TryRecordPass(Color.Black);
     bool success2 = game.TryRecordMove(Color.White, 0, 0);
@@ -178,13 +202,14 @@ public class GameTests
     Assert.True(success2);
     Assert.True(success3);
     Assert.Null(game.Outcome);
-    Assert.Equal([new Move(null), new Move(new Coordinates(0, 0)), new Move(null)], game.Moves);
+    Assert.Equal([new Move(null, 0), new Move(new Coordinates(0, 0), 1), new Move(null, 2)], game.Moves);
   }
 
   [Fact]
   public void TryRecordPass_TwoNonConsecutivePassestakeDifferentPlayers_DoesNotSetOutcome()
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
 
     bool success1 = game.TryRecordPass(Color.Black);
     bool success2 = game.TryRecordMove(Color.White, 0, 0);
@@ -197,7 +222,7 @@ public class GameTests
     Assert.True(success4);
     Assert.Null(game.Outcome);
     Assert.Equal(
-      [new Move(null), new Move(new Coordinates(0, 0)), new Move(new Coordinates(1, 1)), new Move(null)],
+      [new Move(null, 0), new Move(new Coordinates(0, 0), 1), new Move(new Coordinates(1, 1), 2), new Move(null, 3)],
       game.Moves);
   }
 
@@ -207,6 +232,7 @@ public class GameTests
   public void TryRecordResign_UnfinishedGame_ResignsAndReturnsTrue(Color resigningColor, Outcome expectedOutcome)
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
 
     bool success = game.TryRecordResign(resigningColor);
 
@@ -222,6 +248,7 @@ public class GameTests
   public void TryRecordResign_FinishedGame_DoesNotResignAndReturnsFalse(Outcome outcome)
   {
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, outcome);
+    game.BuildPosition();
 
     bool success = game.TryRecordResign(Color.Black);
 
@@ -234,28 +261,28 @@ public class GameTests
   public void TryUndo_LastMoveIsHumanMove_UndoesOnlyThatMove()
   {
     // player is white, who made the second move
-    Game game = new([new Move(new Coordinates(0, 0)), new Move(new Coordinates(1, 1))], Guid.NewGuid(), Guid.NewGuid(), Color.White, 9, null);
+    Game game = new([new Move(new Coordinates(0, 0), 0), new Move(new Coordinates(1, 1), 1)], Guid.NewGuid(), Guid.NewGuid(), Color.White, 9, null);
+    game.BuildPosition();
 
-    bool success = game.TryUndo(out Game? newGame);
+    bool success = game.TryUndo();
 
     Assert.True(success);
-    Assert.NotNull(newGame);
-    Assert.Equal(game.PlayerColor, newGame.Turn);
-    Assert.Equal([new Move(new Coordinates(0, 0))], newGame.Moves);
+    Assert.Equal(game.PlayerColor, game.Turn);
+    Assert.Equal([new Move(new Coordinates(0, 0), 0)], game.Moves);
   }
 
   [Fact]
   public void TryUndo_LastMoveIsBotResponse_UndoesTwoMoves()
   {
     // player is white, bot move, followed by player move, followed by bot move
-    Game game = new([new Move(new Coordinates(0, 0)), new Move(new Coordinates(1, 1)), new Move(new Coordinates(2, 2))], Guid.NewGuid(), Guid.NewGuid(), Color.White, 9, null);
+    Game game = new([new Move(new Coordinates(0, 0), 0), new Move(new Coordinates(1, 1), 1), new Move(new Coordinates(2, 2), 2)], Guid.NewGuid(), Guid.NewGuid(), Color.White, 9, null);
+    game.BuildPosition();
 
-    bool success = game.TryUndo(out Game? newGame);
+    bool success = game.TryUndo();
 
     Assert.True(success);
-    Assert.NotNull(newGame);
-    Assert.Equal(game.PlayerColor, newGame.Turn);
-    Assert.Equal([new Move(new Coordinates(0, 0))], newGame.Moves);
+    Assert.Equal(game.PlayerColor, game.Turn);
+    Assert.Equal([new Move(new Coordinates(0, 0), 0)], game.Moves);
   }
 
   [Fact]
@@ -263,11 +290,11 @@ public class GameTests
   {
     // player is black, no moves
     Game game = new([], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
 
-    bool success = game.TryUndo(out Game? newGame);
+    bool success = game.TryUndo();
 
     Assert.False(success);
-    Assert.Null(newGame);
     Assert.Empty(game.Moves);
   }
 
@@ -275,13 +302,13 @@ public class GameTests
   public void TryUndo_PlayerIsWhiteAndNoWhiteMoves_ReturnsFalse()
   {
     // player is white, no white moves
-    Game game = new([new Move(new Coordinates(0, 0))], Guid.NewGuid(), Guid.NewGuid(), Color.White, 9, null);
+    Game game = new([new Move(new Coordinates(0, 0), 0)], Guid.NewGuid(), Guid.NewGuid(), Color.White, 9, null);
+    game.BuildPosition();
 
-    bool success = game.TryUndo(out Game? newGame);
+    bool success = game.TryUndo();
 
     Assert.False(success);
-    Assert.Null(newGame);
-    Assert.Equal([new Move(new Coordinates(0, 0))], game.Moves);
+    Assert.Equal([new Move(new Coordinates(0, 0), 0)], game.Moves);
   }
 
   [Theory]
@@ -292,12 +319,68 @@ public class GameTests
   {
     // A human move exists in history here, so the only reason this can fail
     // is the finished-game guard
-    Game game = new([new Move(new Coordinates(0, 0))], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, outcome);
+    Game game = new([new Move(new Coordinates(0, 0), 0)], Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, outcome);
+    game.BuildPosition();
 
-    bool success = game.TryUndo(out Game? newGame);
+    bool success = game.TryUndo();
 
     Assert.False(success);
-    Assert.Null(newGame);
-    Assert.Equal([new Move(new Coordinates(0, 0))], game.Moves);
+    Assert.Equal([new Move(new Coordinates(0, 0), 0)], game.Moves);
+  }
+
+  [Fact]
+  public void Turn_PositionNotBuilt_Throws()
+  {
+    Game game = new(Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    Assert.Throws<InvalidOperationException>(() => game.Turn);
+  }
+
+  [Fact]
+  public void GetBoard_PositionNotBuilt_Throws()
+  {
+    Game game = new(Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    Assert.Throws<InvalidOperationException>(() => game.GetBoard());
+  }
+
+  [Fact]
+  public void TryRecordMove_PositionNotBuilt_Throws()
+  {
+    Game game = new(Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    Assert.Throws<InvalidOperationException>(() => game.TryRecordMove(Color.Black, 0, 0));
+  }
+
+  [Fact]
+  public void TryRecordPass_PositionNotBuilt_Throws()
+  {
+    Game game = new(Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    Assert.Throws<InvalidOperationException>(() => game.TryRecordPass(Color.Black));
+  }
+
+  [Theory]
+  [InlineData(null)]
+  [InlineData(Outcome.BotResigned)]
+  public void TryUndo_PositionNotBuilt_Throws(Outcome? outcome)
+  {
+    // Unlike TryRecordMove/TryRecordPass, TryUndo reads Turn before checking
+    // Outcome, so it throws even for a finished game.
+    Game game = new(Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, outcome);
+
+    Assert.Throws<InvalidOperationException>(() => game.TryUndo());
+  }
+
+  [Fact]
+  public void TryRecordResign_PositionNotBuilt_DoesNotThrow()
+  {
+    // TryRecordResign never reads the position — resigning isn't turn-gated —
+    // so it's the one method that's still safe to call before BuildPosition().
+    Game game = new(Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+
+    bool success = game.TryRecordResign(Color.Black);
+
+    Assert.True(success);
   }
 }
