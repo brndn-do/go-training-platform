@@ -9,5 +9,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/GoTrainingPlatform.Application.Tests/GoTrainingPlatform.Application.Tests.csproj" />
     <Project Path="tests/GoTrainingPlatform.Domain.Tests/GoTrainingPlatform.Domain.Tests.csproj" />
+    <Project Path="tests/GoTrainingPlatform.Infrastructure.Tests/GoTrainingPlatform.Infrastructure.Tests.csproj" />
   </Folder>
 </Solution>
