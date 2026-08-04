@@ -10,6 +10,15 @@ public class FakeGameRepository : IGameRepository
 {
   private readonly Dictionary<Guid, Game> games = [];
 
+  /// <summary>
+  /// Gets the number of times <see cref="SaveAsync"/> was called. Since this fake stores
+  /// object references directly, a domain mutation (e.g. <c>Game.TryRecordMove</c>) is
+  /// visible via <see cref="GetByIdAsync"/> whether or not <see cref="SaveAsync"/> was ever
+  /// called — this counter exists so tests can assert persistence actually happened, rather
+  /// than a state check that would pass regardless.
+  /// </summary>
+  public int SaveAsyncCallCount { get; private set; }
+
   /// <inheritdoc/>
   public Task<Game?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
   {
@@ -28,6 +37,7 @@ public class FakeGameRepository : IGameRepository
   public Task SaveAsync(Game game, CancellationToken cancellationToken = default)
   {
     games[game.Id] = game;
+    SaveAsyncCallCount++;
     return Task.CompletedTask;
   }
 }

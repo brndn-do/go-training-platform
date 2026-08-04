@@ -22,7 +22,7 @@ public class GameServiceTests
 
     var persisted = await repository.GetByIdAsync(game.Id);
     Assert.NotNull(persisted);
-    Assert.Equivalent(game, persisted);
+    Assert.Equal(game.Id, persisted.Id);
   }
 
   [Theory]
@@ -67,5 +67,192 @@ public class GameServiceTests
     var result = await gameService.LoadGameAsync(Guid.NewGuid());
 
     Assert.Null(result);
+  }
+
+  [Fact]
+  public async Task MakeMoveAsync_LegalMove_SucceedsAndPersists()
+  {
+    FakeGameRepository repository = new();
+    GameService gameService = new(repository);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+
+    var result = await gameService.MakeMoveAsync(game.Id, Color.Black, 0, 0);
+
+    Assert.True(result.Success);
+    Assert.NotNull(result.Game);
+    Assert.Single(result.Game.Moves);
+    Assert.Equal(Color.White, result.Game.Turn);
+    Assert.Equal(1, repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
+  public async Task MakeMoveAsync_NonExistentGame_ReturnsNotFound()
+  {
+    FakeGameRepository repository = new();
+    GameService gameService = new(repository);
+
+    var result = await gameService.MakeMoveAsync(Guid.NewGuid(), Color.Black, 0, 0);
+
+    Assert.False(result.Success);
+    Assert.Null(result.Game);
+    Assert.Equal(0, repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
+  public async Task MakeMoveAsync_InvalidAction_FailsWithoutMutatingOrPersisting()
+  {
+    FakeGameRepository repository = new();
+    GameService gameService = new(repository);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+
+    // Invalid action using the wrong turn
+    var result = await gameService.MakeMoveAsync(game.Id, Color.White, 0, 0);
+
+    Assert.False(result.Success);
+    Assert.NotNull(result.Game);
+    Assert.Empty(result.Game.Moves);
+    Assert.Equal(0, repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
+  public async Task MakePassAsync_LegalPass_SucceedsAndPersists()
+  {
+    FakeGameRepository repository = new();
+    GameService gameService = new(repository);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+
+    var result = await gameService.MakePassAsync(game.Id, Color.Black);
+
+    Assert.True(result.Success);
+    Assert.NotNull(result.Game);
+    Assert.Single(result.Game.Moves);
+    Assert.Equal(Color.White, result.Game.Turn);
+    Assert.Null(result.Game.Outcome);
+    Assert.Equal(1, repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
+  public async Task MakePassAsync_NonExistentGame_ReturnsNotFound()
+  {
+    FakeGameRepository repository = new();
+    GameService gameService = new(repository);
+
+    var result = await gameService.MakePassAsync(Guid.NewGuid(), Color.Black);
+
+    Assert.False(result.Success);
+    Assert.Null(result.Game);
+    Assert.Equal(0, repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
+  public async Task MakePassAsync_InvalidAction_FailsWithoutMutatingOrPersisting()
+  {
+    FakeGameRepository repository = new();
+    GameService gameService = new(repository);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+
+    // Invalid action using the wrong turn
+    var result = await gameService.MakePassAsync(game.Id, Color.White);
+
+    Assert.False(result.Success);
+    Assert.NotNull(result.Game);
+    Assert.Empty(result.Game.Moves);
+    Assert.Equal(0, repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
+  public async Task UndoAsync_MoveToUndo_SucceedsAndPersists()
+  {
+    FakeGameRepository repository = new();
+    GameService gameService = new(repository);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+    Assert.True((await gameService.MakeMoveAsync(game.Id, Color.Black, 0, 0)).Success);
+
+    var result = await gameService.UndoAsync(game.Id);
+
+    Assert.True(result.Success);
+    Assert.NotNull(result.Game);
+    Assert.Empty(result.Game.Moves);
+    Assert.Equal(Color.Black, result.Game.Turn);
+    Assert.Equal(2, repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
+  public async Task UndoAsync_NonExistentGame_ReturnsNotFound()
+  {
+    FakeGameRepository repository = new();
+    GameService gameService = new(repository);
+
+    var result = await gameService.UndoAsync(Guid.NewGuid());
+
+    Assert.False(result.Success);
+    Assert.Null(result.Game);
+    Assert.Equal(0, repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
+  public async Task UndoAsync_InvalidAction_FailsWithoutMutatingOrPersisting()
+  {
+    FakeGameRepository repository = new();
+    GameService gameService = new(repository);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+
+    // Invalid action with nothing to undo
+    var result = await gameService.UndoAsync(game.Id);
+
+    Assert.False(result.Success);
+    Assert.NotNull(result.Game);
+    Assert.Empty(result.Game.Moves);
+    Assert.Equal(0, repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
+  public async Task ResignAsync_ValidInput_SucceedsAndPersists()
+  {
+    FakeGameRepository repository = new();
+    GameService gameService = new(repository);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+
+    var result = await gameService.ResignAsync(game.Id, Color.Black);
+
+    Assert.True(result.Success);
+    Assert.NotNull(result.Game);
+    Assert.Equal(Outcome.PlayerResigned, result.Game.Outcome);
+    Assert.Equal(1, repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
+  public async Task ResignAsync_NonExistentGame_ReturnsNotFound()
+  {
+    FakeGameRepository repository = new();
+    GameService gameService = new(repository);
+
+    var result = await gameService.ResignAsync(Guid.NewGuid(), Color.Black);
+
+    Assert.False(result.Success);
+    Assert.Null(result.Game);
+    Assert.Equal(0, repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
+  public async Task ResignAsync_InvalidAction_FailsWithoutMutatingOrPersisting()
+  {
+    FakeGameRepository repository = new();
+    GameService gameService = new(repository);
+    Guid gameId = Guid.NewGuid();
+    Guid playerId = Guid.NewGuid();
+    Game game = new(gameId, playerId, Color.Black, 9, Outcome.PlayerResigned);
+    game.BuildPosition();
+    Game expected = new(gameId, playerId, Color.Black, 9, Outcome.PlayerResigned);
+    expected.BuildPosition();
+    await repository.AddAsync(game);
+
+    // Invalid action - game already finished
+    var result = await gameService.ResignAsync(gameId, Color.Black);
+
+    Assert.False(result.Success);
+    Assert.NotNull(result.Game);
+    Assert.Equivalent(expected, result.Game);
+    Assert.Equal(0, repository.SaveAsyncCallCount);
   }
 }
