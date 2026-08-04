@@ -18,6 +18,7 @@ public class GameConfiguration : IEntityTypeConfiguration<Game>
     builder.Property(game => game.BoardSize);
     builder.Property(game => game.Outcome);
     builder.Property(game => game.Komi);
+    builder.Property(game => game.BotStrength);
 
     builder.OwnsMany(game => game.Moves, move =>
     {
