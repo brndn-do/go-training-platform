@@ -12,7 +12,7 @@ public class GameServiceTests
     GameService gameService = new(repository);
     Guid playerId = Guid.NewGuid();
 
-    var game = await gameService.StartGameAsync(playerId, Color.Black, 9);
+    var game = await gameService.StartGameAsync(playerId, Color.Black, 9, BotStrength.Superhuman);
 
     Assert.Equal(playerId, game.PlayerId);
     Assert.Equal(Color.Black, game.PlayerColor);
@@ -34,7 +34,7 @@ public class GameServiceTests
     GameService gameService = new(repository);
     Guid playerId = Guid.NewGuid();
 
-    await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => gameService.StartGameAsync(playerId, Color.Black, boardSize));
+    await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => gameService.StartGameAsync(playerId, Color.Black, boardSize, BotStrength.Superhuman));
   }
 
   [Fact]
@@ -74,7 +74,7 @@ public class GameServiceTests
   {
     FakeGameRepository repository = new();
     GameService gameService = new(repository);
-    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9, BotStrength.Superhuman);
 
     var result = await gameService.MakeMoveAsync(game.Id, Color.Black, 0, 0);
 
@@ -103,7 +103,7 @@ public class GameServiceTests
   {
     FakeGameRepository repository = new();
     GameService gameService = new(repository);
-    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9, BotStrength.Superhuman);
 
     // Invalid action using the wrong turn
     var result = await gameService.MakeMoveAsync(game.Id, Color.White, 0, 0);
@@ -119,7 +119,7 @@ public class GameServiceTests
   {
     FakeGameRepository repository = new();
     GameService gameService = new(repository);
-    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9, BotStrength.Superhuman);
 
     var result = await gameService.MakePassAsync(game.Id, Color.Black);
 
@@ -149,7 +149,7 @@ public class GameServiceTests
   {
     FakeGameRepository repository = new();
     GameService gameService = new(repository);
-    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9, BotStrength.Superhuman);
 
     // Invalid action using the wrong turn
     var result = await gameService.MakePassAsync(game.Id, Color.White);
@@ -165,7 +165,7 @@ public class GameServiceTests
   {
     FakeGameRepository repository = new();
     GameService gameService = new(repository);
-    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9, BotStrength.Superhuman);
     Assert.True((await gameService.MakeMoveAsync(game.Id, Color.Black, 0, 0)).Success);
 
     var result = await gameService.UndoAsync(game.Id);
@@ -195,7 +195,7 @@ public class GameServiceTests
   {
     FakeGameRepository repository = new();
     GameService gameService = new(repository);
-    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9, BotStrength.Superhuman);
 
     // Invalid action with nothing to undo
     var result = await gameService.UndoAsync(game.Id);
@@ -211,7 +211,7 @@ public class GameServiceTests
   {
     FakeGameRepository repository = new();
     GameService gameService = new(repository);
-    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9);
+    var game = await gameService.StartGameAsync(Guid.NewGuid(), Color.Black, 9, BotStrength.Superhuman);
 
     var result = await gameService.ResignAsync(game.Id, Color.Black);
 

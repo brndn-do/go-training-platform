@@ -19,6 +19,7 @@ public class GameService(IGameRepository gameRepository)
   /// <param name="playerId">The id of the human player.</param>
   /// <param name="playerColor">The color the human player is playing as.</param>
   /// <param name="boardSize">The width and height of the (square) board.</param>
+  /// <param name="botStrength">The strength of the bot for this game.</param>
   /// <param name="komi">The komi to use for this game.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>The newly created, persisted <see cref="Game"/>, with its position already built.</returns>
@@ -29,10 +30,11 @@ public class GameService(IGameRepository gameRepository)
     Guid playerId,
     Color playerColor,
     int boardSize,
+    BotStrength botStrength,
     double komi = 7.5,
     CancellationToken cancellationToken = default)
   {
-    Game game = new(Guid.NewGuid(), playerId, playerColor, boardSize, null, komi);
+    Game game = new(Guid.NewGuid(), playerId, playerColor, boardSize, null, komi, botStrength);
     game.BuildPosition();
 
     await gameRepository.AddAsync(game, cancellationToken);

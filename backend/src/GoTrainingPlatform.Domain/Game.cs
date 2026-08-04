@@ -25,8 +25,9 @@ public class Game
   /// <param name="boardSize">The width and height of the (square) board.</param>
   /// <param name="outcome"><c>null</c> if still in progress; otherwise how the game ended.</param>
   /// <param name="komi">The komi to use for this game and to report to the underlying rules engine.</param>
+  /// <param name="botStrength">The strength of the bot for this game.</param>
   #pragma warning disable IDE0290 // Rich aggregate with EF Core constructor-binding history — not a fit for a primary constructor.
-  public Game(Guid id, Guid playerId, Color playerColor, int boardSize, Outcome? outcome, double komi = 7.5)
+  public Game(Guid id, Guid playerId, Color playerColor, int boardSize, Outcome? outcome, double komi = 7.5, BotStrength botStrength = BotStrength.Superhuman)
   {
     Id = id;
     PlayerId = playerId;
@@ -34,6 +35,7 @@ public class Game
     BoardSize = boardSize;
     Komi = komi;
     Outcome = outcome;
+    BotStrength = botStrength;
   }
   #pragma warning restore IDE0290
 
@@ -50,8 +52,9 @@ public class Game
   /// <param name="boardSize">The width and height of the (square) board.</param>
   /// <param name="outcome"><c>null</c> if still in progress; otherwise how the game ended.</param>
   /// <param name="komi">The komi to use for this game and to report to the underlying rules engine.</param>
-  public Game(IReadOnlyList<Move> moveHistory, Guid id, Guid playerId, Color playerColor, int boardSize, Outcome? outcome, double komi = 7.5)
-    : this(id, playerId, playerColor, boardSize, outcome, komi)
+  /// <param name="botStrength">The strength of the bot for this game.</param>
+  public Game(IReadOnlyList<Move> moveHistory, Guid id, Guid playerId, Color playerColor, int boardSize, Outcome? outcome, double komi = 7.5, BotStrength botStrength = BotStrength.Superhuman)
+    : this(id, playerId, playerColor, boardSize, outcome, komi, botStrength)
   {
     moves = [.. moveHistory];
   }
@@ -86,7 +89,10 @@ public class Game
   /// </summary>
   public double Komi { get; }
 
-  // TODO: bot strength, decide difficulty representation (e.g. easy, normal, hard) or configurable visit/playout
+  /// <summary>
+  /// Gets the strength of the bot for this game.
+  /// </summary>
+  public BotStrength BotStrength { get; }
 
   /// <summary>
   /// Gets how the game ended, or <c>null</c> if it's still in progress.
