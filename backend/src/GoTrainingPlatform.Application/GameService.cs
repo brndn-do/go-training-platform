@@ -34,4 +34,17 @@ public class GameService(IGameRepository gameRepository)
 
     return game;
   }
+
+  /// <summary>
+  /// Loads a game and builds its position, without mutating it.
+  /// </summary>
+  /// <param name="gameId">The game's id.</param>
+  /// <param name="cancellationToken">A token to cancel the operation.</param>
+  /// <returns>The game, with its position already built, or <c>null</c> if no game with that id exists.</returns>
+  public async Task<Game?> LoadGameAsync(Guid gameId, CancellationToken cancellationToken = default)
+  {
+    Game? game = await gameRepository.GetByIdAsync(gameId, cancellationToken);
+    game?.BuildPosition();
+    return game;
+  }
 }
