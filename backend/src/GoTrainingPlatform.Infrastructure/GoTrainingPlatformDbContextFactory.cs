@@ -24,7 +24,7 @@ public class GoTrainingPlatformDbContextFactory : IDesignTimeDbContextFactory<Go
   {
     var optionsBuilder = new DbContextOptionsBuilder<GoTrainingPlatformDbContext>();
     optionsBuilder
-      .UseNpgsql("Host=localhost;Port=5433;Database=gotraining;Username=gotraining;Password=changeme")
+      .UseNpgsql("Host=localhost;Port=5432;Database=gotraining;Username=gotraining;Password=changeme")
       .UseSnakeCaseNamingConvention();
     return new GoTrainingPlatformDbContext(optionsBuilder.Options);
   }
