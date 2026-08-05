@@ -3,7 +3,7 @@ namespace GoTrainingPlatform.Domain;
 /// <summary>
 /// Represents a move.
 /// </summary>
-public record Move
+public sealed record Move
 {
   /// <summary>
   /// Initializes a new instance of the <see cref="Move"/> class representing a pass
