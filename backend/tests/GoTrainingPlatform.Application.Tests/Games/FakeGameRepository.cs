@@ -1,6 +1,7 @@
+using GoTrainingPlatform.Application.Games;
 using GoTrainingPlatform.Domain;
 
-namespace GoTrainingPlatform.Application.Tests;
+namespace GoTrainingPlatform.Application.Tests.Games;
 
 /// <summary>
 /// In-memory <see cref="IGameRepository"/>, used to test <see cref="GameService"/>'s

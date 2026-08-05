@@ -1,4 +1,4 @@
-using GoTrainingPlatform.Application;
+using GoTrainingPlatform.Application.Games;
 using GoTrainingPlatform.Domain;
 using Microsoft.EntityFrameworkCore;
 

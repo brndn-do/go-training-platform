@@ -1,7 +1,8 @@
+using GoTrainingPlatform.Application.Orchestration;
 using GoTrainingPlatform.Domain;
 using GoTrainingPlatform.Domain.Enums;
 
-namespace GoTrainingPlatform.Application.Tests;
+namespace GoTrainingPlatform.Application.Tests.Orchestration;
 
 /// <summary>
 /// Returns each <see cref="EngineSuggestion"/> in the list it was constructed with, one per

@@ -1,7 +1,8 @@
+using GoTrainingPlatform.Application.Games;
 using GoTrainingPlatform.Domain;
 using GoTrainingPlatform.Domain.Enums;
 
-namespace GoTrainingPlatform.Application;
+namespace GoTrainingPlatform.Application.Orchestration;
 
 /// <summary>
 /// Sequences human and bot turns: takes a human action, and — unlike <see cref="GameService"/>,

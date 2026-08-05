@@ -1,6 +1,6 @@
 using GoTrainingPlatform.Domain;
 
-namespace GoTrainingPlatform.Application;
+namespace GoTrainingPlatform.Application.Games;
 
 /// <summary>
 /// The result of a <see cref="GameService"/> game-action method (make a move, pass, undo, resign).

@@ -1,7 +1,10 @@
+using GoTrainingPlatform.Application.Games;
+using GoTrainingPlatform.Application.Orchestration;
+using GoTrainingPlatform.Application.Tests.Games;
 using GoTrainingPlatform.Domain;
 using GoTrainingPlatform.Domain.Enums;
 
-namespace GoTrainingPlatform.Application.Tests;
+namespace GoTrainingPlatform.Application.Tests.Orchestration;
 
 public class TurnOrchestratorTests
 {

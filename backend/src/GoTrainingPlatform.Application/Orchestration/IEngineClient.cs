@@ -1,7 +1,7 @@
 using GoTrainingPlatform.Domain;
 using GoTrainingPlatform.Domain.Enums;
 
-namespace GoTrainingPlatform.Application;
+namespace GoTrainingPlatform.Application.Orchestration;
 
 /// <summary>
 /// Provides a suggested move and win-rate estimate for a game position, implemented by

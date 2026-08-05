@@ -1,6 +1,6 @@
 using GoTrainingPlatform.Domain;
 
-namespace GoTrainingPlatform.Application;
+namespace GoTrainingPlatform.Application.Games;
 
 /// <summary>
 /// Persistence abstraction for <see cref="Game"/>, implemented by Infrastructure.

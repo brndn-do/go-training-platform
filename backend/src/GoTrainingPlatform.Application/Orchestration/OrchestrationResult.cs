@@ -1,6 +1,6 @@
 using GoTrainingPlatform.Domain;
 
-namespace GoTrainingPlatform.Application;
+namespace GoTrainingPlatform.Application.Orchestration;
 
 /// <summary>
 /// The result of a <see cref="TurnOrchestrator"/> operation.

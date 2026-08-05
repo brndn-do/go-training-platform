@@ -1,4 +1,4 @@
-namespace GoTrainingPlatform.Application;
+namespace GoTrainingPlatform.Application.Orchestration;
 
 /// <summary>
 /// Thrown when a bot response is invalid.

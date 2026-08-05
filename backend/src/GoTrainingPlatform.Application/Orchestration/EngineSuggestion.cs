@@ -1,6 +1,6 @@
 using GoTrainingPlatform.Domain;
 
-namespace GoTrainingPlatform.Application;
+namespace GoTrainingPlatform.Application.Orchestration;
 
 /// <summary>
 /// The engine's suggested next move for a position, from <see cref="IEngineClient.GetSuggestionAsync"/>.

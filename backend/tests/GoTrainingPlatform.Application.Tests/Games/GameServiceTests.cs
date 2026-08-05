@@ -1,7 +1,8 @@
+using GoTrainingPlatform.Application.Games;
 using GoTrainingPlatform.Domain;
 using GoTrainingPlatform.Domain.Enums;
 
-namespace GoTrainingPlatform.Application.Tests;
+namespace GoTrainingPlatform.Application.Tests.Games;
 
 public class GameServiceTests
 {

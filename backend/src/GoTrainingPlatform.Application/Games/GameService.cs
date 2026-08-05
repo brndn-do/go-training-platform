@@ -1,7 +1,7 @@
 using GoTrainingPlatform.Domain;
 using GoTrainingPlatform.Domain.Enums;
 
-namespace GoTrainingPlatform.Application;
+namespace GoTrainingPlatform.Application.Games;
 
 /// <summary>
 /// Persists <see cref="Game"/>'s use cases: start, load, and the four game-actions (move, pass,
