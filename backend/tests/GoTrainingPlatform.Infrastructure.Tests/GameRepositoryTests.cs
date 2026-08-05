@@ -1,5 +1,6 @@
 using GoTrainingPlatform.Domain;
 using GoTrainingPlatform.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace GoTrainingPlatform.Infrastructure.Tests;
 
@@ -131,6 +132,33 @@ public class GameRepositoryTests(PostgresFixture postgresFixture)
     Assert.NotNull(result);
     result.BuildPosition();
     Assert.Equivalent(existingGame, result);
+  }
+
+  [Fact]
+  public async Task SaveAsync_Concurrent_ThrowsDbUpdateConcurrencyException()
+  {
+    Guid gameId = Guid.NewGuid();
+    Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
+
+    await Repo().AddAsync(game);
+
+    var repo1 = Repo();
+    var repo2 = Repo();
+
+    var result1 = await repo1.GetByIdAsync(gameId);
+    var result2 = await repo2.GetByIdAsync(gameId);
+
+    Assert.NotNull(result1);
+    Assert.NotNull(result2);
+
+    result1.BuildPosition();
+    result1.TryRecordResign(Color.Black);
+    result2.BuildPosition();
+    result2.TryRecordResign(Color.Black);
+
+    await repo1.SaveAsync(result1);
+    await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => repo2.SaveAsync(result2));
   }
 
   // Returns a repository with a fresh context.

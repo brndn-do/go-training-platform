@@ -19,6 +19,9 @@ public class GameConfiguration : IEntityTypeConfiguration<Game>
     builder.Property(game => game.Outcome);
     builder.Property(game => game.Komi);
     builder.Property(game => game.BotStrength);
+    builder.Property<uint>("xmin")
+      .HasColumnName("xmin")
+      .IsRowVersion(); // note: as of EF Core 7 UseXminAsConcurrencyToken is no longer used
 
     builder.OwnsMany(game => game.Moves, move =>
     {
