@@ -76,6 +76,140 @@ public class TurnOrchestrator(GameService gameService, IEngineClient engineClien
     return new OrchestrationResult(game, true, suggestionForHuman);
   }
 
+  /// <summary>
+  /// Attempts to record a stone placement for <paramref name="movingColor"/>, advancing the
+  /// bot's turn next if the move was accepted.
+  /// </summary>
+  /// <param name="gameId">The game's id.</param>
+  /// <param name="movingColor">The color of the human player attempting to move.</param>
+  /// <param name="x">The X coordinate of the move, zero-indexed.</param>
+  /// <param name="y">The Y coordinate of the move, zero-indexed.</param>
+  /// <param name="cancellationToken">A token to cancel the operation.</param>
+  /// <returns>
+  /// A result with <c>Game: null</c> if no game with that id exists; otherwise the game, with
+  /// <c>Success</c> reflecting whether the move was accepted, and a hint for the human's next
+  /// move if it was.
+  /// </returns>
+  /// <exception cref="InvalidBotResponseException">
+  /// If the bot response from the engine is an invalid operation.
+  /// </exception>
+  public async Task<OrchestrationResult> MakeMoveAsync(
+    Guid gameId,
+    Color movingColor,
+    int x,
+    int y,
+    CancellationToken cancellationToken = default)
+  {
+    GameActionResult actionResult = await gameService.MakeMoveAsync(gameId, movingColor, x, y, cancellationToken);
+    if (!actionResult.Success)
+    {
+      return new OrchestrationResult(actionResult.Game, false, null);
+    }
+
+    Game game = actionResult.Game!;
+
+    if (game.Turn != game.PlayerColor)
+    {
+      game = await MakeBotPlayAsync(game, cancellationToken);
+    }
+
+    var suggestionForHuman = await GetSuggestionForHumanAsync(game, cancellationToken);
+
+    return new OrchestrationResult(game, true, suggestionForHuman);
+  }
+
+  /// <summary>
+  /// Attempts to record a pass for <paramref name="passingColor"/>, advancing the bot's turn
+  /// next if the pass was accepted.
+  /// </summary>
+  /// <param name="gameId">The game's id.</param>
+  /// <param name="passingColor">The color of the human player attempting to pass.</param>
+  /// <param name="cancellationToken">A token to cancel the operation.</param>
+  /// <returns>
+  /// A result with <c>Game: null</c> if no game with that id exists; otherwise the game, with
+  /// <c>Success</c> reflecting whether the pass was accepted, and a hint for the human's next
+  /// move if it was.
+  /// </returns>
+  /// <exception cref="InvalidBotResponseException">
+  /// If the bot response from the engine is an invalid operation.
+  /// </exception>
+  public async Task<OrchestrationResult> MakePassAsync(
+    Guid gameId,
+    Color passingColor,
+    CancellationToken cancellationToken = default)
+  {
+    GameActionResult actionResult = await gameService.MakePassAsync(gameId, passingColor, cancellationToken);
+    if (!actionResult.Success)
+    {
+      return new OrchestrationResult(actionResult.Game, false, null);
+    }
+
+    Game game = actionResult.Game!;
+
+    if (game.Turn != game.PlayerColor)
+    {
+      game = await MakeBotPlayAsync(game, cancellationToken);
+    }
+
+    var suggestionForHuman = await GetSuggestionForHumanAsync(game, cancellationToken);
+
+    return new OrchestrationResult(game, true, suggestionForHuman);
+  }
+
+  /// <summary>
+  /// Attempts to undo back to before the human player's most recent move. Never advances the
+  /// bot's turn — a successful undo always lands back on the human's turn.
+  /// </summary>
+  /// <param name="gameId">The game's id.</param>
+  /// <param name="cancellationToken">A token to cancel the operation.</param>
+  /// <returns>
+  /// A result with <c>Game: null</c> if no game with that id exists; otherwise the game, with
+  /// <c>Success</c> reflecting whether the undo was applied, and a hint for the human's next
+  /// move if it was.
+  /// </returns>
+  public async Task<OrchestrationResult> UndoAsync(Guid gameId, CancellationToken cancellationToken = default)
+  {
+    GameActionResult actionResult = await gameService.UndoAsync(gameId, cancellationToken);
+    if (!actionResult.Success)
+    {
+      return new OrchestrationResult(actionResult.Game, false, null);
+    }
+
+    Game game = actionResult.Game!;
+    var suggestionForHuman = await GetSuggestionForHumanAsync(game, cancellationToken);
+
+    return new OrchestrationResult(game, true, suggestionForHuman);
+  }
+
+  /// <summary>
+  /// Attempts to resign the game for <paramref name="resigningColor"/>. Never advances the
+  /// bot's turn — resigning ends the game immediately.
+  /// </summary>
+  /// <param name="gameId">The game's id.</param>
+  /// <param name="resigningColor">The color resigning.</param>
+  /// <param name="cancellationToken">A token to cancel the operation.</param>
+  /// <returns>
+  /// A result with <c>Game: null</c> if no game with that id exists; otherwise the game, with
+  /// <c>Success</c> reflecting whether the resignation was accepted, and a final win-rate
+  /// estimate if it was.
+  /// </returns>
+  public async Task<OrchestrationResult> ResignAsync(
+    Guid gameId,
+    Color resigningColor,
+    CancellationToken cancellationToken = default)
+  {
+    GameActionResult actionResult = await gameService.ResignAsync(gameId, resigningColor, cancellationToken);
+    if (!actionResult.Success)
+    {
+      return new OrchestrationResult(actionResult.Game, false, null);
+    }
+
+    Game game = actionResult.Game!;
+    var suggestionForHuman = await GetSuggestionForHumanAsync(game, cancellationToken);
+
+    return new OrchestrationResult(game, true, suggestionForHuman);
+  }
+
   private async Task<EngineSuggestion> GetSuggestionForHumanAsync(Game game, CancellationToken cancellationToken) =>
     await engineClient.GetSuggestionAsync(
       game.Moves,
