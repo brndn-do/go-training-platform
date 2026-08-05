@@ -44,6 +44,38 @@ public class TurnOrchestrator(GameService gameService, IEngineClient engineClien
     return new OrchestrationResult(game, true, suggestionForHuman);
   }
 
+  /// <summary>
+  /// Loads a game, advancing the bot's turn first if it was already the bot's turn —
+  /// covering a bot response that was never recorded (e.g. after a crash between the
+  /// human's move and the bot's response) alongside the ordinary case.
+  /// </summary>
+  /// <param name="gameId">The game's id.</param>
+  /// <param name="cancellationToken">A token to cancel the operation.</param>
+  /// <returns>
+  /// A result with <c>Game: null</c> if no game with that id exists; otherwise the loaded
+  /// game and a hint for the human's next move.
+  /// </returns>
+  /// <exception cref="InvalidBotResponseException">
+  /// If the bot response from the engine is an invalid operation.
+  /// </exception>
+  public async Task<OrchestrationResult> LoadGameAsync(Guid gameId, CancellationToken cancellationToken = default)
+  {
+    Game? game = await gameService.LoadGameAsync(gameId, cancellationToken);
+    if (game is null)
+    {
+      return new OrchestrationResult(null, false, null);
+    }
+
+    if (game.Turn != game.PlayerColor)
+    {
+      game = await MakeBotPlayAsync(game, cancellationToken);
+    }
+
+    var suggestionForHuman = await GetSuggestionForHumanAsync(game, cancellationToken);
+
+    return new OrchestrationResult(game, true, suggestionForHuman);
+  }
+
   private async Task<EngineSuggestion> GetSuggestionForHumanAsync(Game game, CancellationToken cancellationToken) =>
     await engineClient.GetSuggestionAsync(
       game.Moves,
