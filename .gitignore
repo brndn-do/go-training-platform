@@ -19,6 +19,10 @@ dist-ssr/
 engine/models/*
 !engine/models/.gitkeep
 
+# KataGo binary (platform-specific, dropped locally, not distributed via git)
+engine/katago/*
+!engine/katago/.gitkeep
+
 # OS / editor
 .DS_Store
 Thumbs.db

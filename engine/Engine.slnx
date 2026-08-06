@@ -2,4 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Engine.Api/Engine.Api.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Engine.Api.Tests/Engine.Api.Tests.csproj" />
+  </Folder>
 </Solution>
