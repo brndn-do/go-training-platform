@@ -24,7 +24,7 @@ engine/katago/*
 !engine/katago/.gitkeep
 
 # KataGo analysis engine's own runtime log output (logDir in go_training_platform_config.cfg)
-engine/src/Engine.Api/analysis_logs/
+engine/**/analysis_logs/
 
 # OS / editor
 .DS_Store
