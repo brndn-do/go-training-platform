@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\src\Engine.Api\Engine.Api.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Analysis\TestData\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
