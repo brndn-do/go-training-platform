@@ -5,12 +5,12 @@ namespace Engine.Api.Analysis;
 /// </summary>
 public static class GtpCoordinate
 {
-  private static readonly IReadOnlyList<char> Columns =
+  private static readonly IReadOnlyList<char> _columns =
     ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T'];
 
-  // Derived from Columns, not hand-written, so the letters/order are only ever defined once.
-  private static readonly Dictionary<char, int> ColumnIndices =
-    Columns.Select((column, index) => (column, index)).ToDictionary(pair => pair.column, pair => pair.index);
+  // Derived from _columns, not hand-written, so the letters/order are only ever defined once.
+  private static readonly Dictionary<char, int> _columnIndices =
+    _columns.Select((column, index) => (column, index)).ToDictionary(pair => pair.column, pair => pair.index);
 
   /// <summary>
   /// Converts board coordinates into a GTP coordinate string for use with KataGo.
@@ -24,7 +24,7 @@ public static class GtpCoordinate
     ArgumentOutOfRangeException.ThrowIfGreaterThan(x, 18);
     ArgumentOutOfRangeException.ThrowIfLessThan(y, 0);
     ArgumentOutOfRangeException.ThrowIfGreaterThan(y, 18);
-    return $"{Columns[x]}{y + 1}";
+    return $"{_columns[x]}{y + 1}";
   }
 
   /// <summary>
@@ -40,7 +40,7 @@ public static class GtpCoordinate
     }
 
     char column = gtp[0];
-    if (!ColumnIndices.TryGetValue(column, out int x))
+    if (!_columnIndices.TryGetValue(column, out int x))
     {
       throw new FormatException($"'{column}' is not a valid GTP column.");
     }

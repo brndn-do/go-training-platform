@@ -9,7 +9,7 @@ namespace GoTrainingPlatform.Application.Tests.Games;
 /// </summary>
 public class FakeGameRepository : IGameRepository
 {
-  private readonly Dictionary<Guid, Game> games = [];
+  private readonly Dictionary<Guid, Game> _games = [];
 
   /// <summary>
   /// Gets the number of times <see cref="SaveAsync"/> was called. Since this fake stores
@@ -23,21 +23,21 @@ public class FakeGameRepository : IGameRepository
   /// <inheritdoc/>
   public Task<Game?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
   {
-    games.TryGetValue(id, out var game);
+    _games.TryGetValue(id, out var game);
     return Task.FromResult(game);
   }
 
   /// <inheritdoc/>
   public Task AddAsync(Game game, CancellationToken cancellationToken = default)
   {
-    games[game.Id] = game;
+    _games[game.Id] = game;
     return Task.CompletedTask;
   }
 
   /// <inheritdoc/>
   public Task SaveAsync(Game game, CancellationToken cancellationToken = default)
   {
-    games[game.Id] = game;
+    _games[game.Id] = game;
     SaveAsyncCallCount++;
     return Task.CompletedTask;
   }

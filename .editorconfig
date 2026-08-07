@@ -20,6 +20,9 @@ dotnet_diagnostic.SA1000.severity = none
 # Duplicates SA1600 (which also checks doc content, not just presence) — one source of truth.
 dotnet_diagnostic.CS1591.severity = none
 
+# Private fields use a leading underscore (_camelCase), the common .NET convention this rule forbids.
+dotnet_diagnostic.SA1309.severity = none
+
 # Vendored third-party source — not ours to reformat or lint.
 [backend/src/GoSharp/**/*.cs]
 generated_code = true

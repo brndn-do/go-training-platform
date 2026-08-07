@@ -5,7 +5,7 @@ namespace Engine.Api.Tests.Analysis;
 
 public class KataGoQueryTests()
 {
-  private static readonly JsonSerializerOptions Options = new()
+  private static readonly JsonSerializerOptions _options = new()
   {
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
   };
@@ -43,7 +43,7 @@ public class KataGoQueryTests()
   {
     var query = new KataGoQuery("test", [(4, 4), (2, 2)], 19, 7.5, "Kyu5");
 
-    JsonDocument doc = JsonDocument.Parse(JsonSerializer.Serialize(query, Options));
+    JsonDocument doc = JsonDocument.Parse(JsonSerializer.Serialize(query, _options));
     JsonElement root = doc.RootElement;
 
     Assert.Equal("test", root.GetProperty("id").GetString());
@@ -74,7 +74,7 @@ public class KataGoQueryTests()
   {
     var query = new KataGoQuery("test", [], 19, 7.5, "Superhuman");
 
-    JsonDocument doc = JsonDocument.Parse(JsonSerializer.Serialize(query, Options));
+    JsonDocument doc = JsonDocument.Parse(JsonSerializer.Serialize(query, _options));
 
     Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("overrideSettings").ValueKind);
   }

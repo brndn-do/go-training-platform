@@ -10,8 +10,8 @@ namespace GoTrainingPlatform.Domain;
 /// </summary>
 public class GoPosition
 {
-  private readonly int boardSize;
-  private GoSharp.Game goSharpGame;
+  private readonly int _boardSize;
+  private GoSharp.Game _goSharpGame;
 
   /// <summary>
   /// Initializes a new instance of the <see cref="GoPosition"/> class: an empty board
@@ -32,15 +32,15 @@ public class GoPosition
   {
     ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(boardSize, 0);
     GoSharp.GameInfo gi = new() { Komi = komi, BoardSizeX = boardSize, BoardSizeY = boardSize };
-    goSharpGame = new(gi);
-    this.boardSize = boardSize;
+    _goSharpGame = new(gi);
+    _boardSize = boardSize;
   }
 
   /// <summary>
   /// Gets the color of the player whose turn it is to play.
   /// </summary>
   /// <value><c>Black</c> or <c>White</c>.</value>
-  public Content Turn => ToContent(goSharpGame.Turn);
+  public Content Turn => ToContent(_goSharpGame.Turn);
 
   /// <summary>
   /// Gets the state of the board, with each coordinate being <c>Empty</c>, <c>Black</c>, or <c>White</c>.
@@ -51,12 +51,12 @@ public class GoPosition
   /// </returns>
   public Content[,] GetBoard()
   {
-    Content[,] board = new Content[boardSize, boardSize];
-    for (int x = 0; x < boardSize; x++)
+    Content[,] board = new Content[_boardSize, _boardSize];
+    for (int x = 0; x < _boardSize; x++)
     {
-      for (int y = 0; y < boardSize; y++)
+      for (int y = 0; y < _boardSize; y++)
       {
-        board[x, y] = ToContent(goSharpGame.Board.GetContentAt(x, y));
+        board[x, y] = ToContent(_goSharpGame.Board.GetContentAt(x, y));
       }
     }
 
@@ -76,19 +76,19 @@ public class GoPosition
   public bool TryMakeMove(int x, int y)
   {
     // check for out of bounds as GoSharp throws if out of bounds
-    if (x < 0 || y < 0 || x >= boardSize || y >= boardSize)
+    if (x < 0 || y < 0 || x >= _boardSize || y >= _boardSize)
     {
       return false;
     }
 
-    var nextState = goSharpGame.MakeMove(x, y, out bool legal);
+    var nextState = _goSharpGame.MakeMove(x, y, out bool legal);
 
     if (!legal)
     {
       return false;
     }
 
-    goSharpGame = nextState;
+    _goSharpGame = nextState;
     return true;
   }
 
@@ -97,7 +97,7 @@ public class GoPosition
   /// </summary>
   public void Pass()
   {
-    goSharpGame = goSharpGame.Pass();
+    _goSharpGame = _goSharpGame.Pass();
   }
 
   private static Content ToContent(GoSharp.Content content) => content switch

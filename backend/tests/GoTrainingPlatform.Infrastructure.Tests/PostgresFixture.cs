@@ -10,12 +10,12 @@ namespace GoTrainingPlatform.Infrastructure.Tests;
 /// </summary>
 public class PostgresFixture : IAsyncLifetime
 {
-  private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:16-alpine").Build();
+  private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:16-alpine").Build();
 
   /// <inheritdoc/>
   public async Task InitializeAsync()
   {
-    await container.StartAsync();
+    await _container.StartAsync();
 
     await using var context = CreateContext();
     await context.Database.MigrateAsync();
@@ -24,7 +24,7 @@ public class PostgresFixture : IAsyncLifetime
   /// <inheritdoc/>
   public async Task DisposeAsync()
   {
-    await container.DisposeAsync();
+    await _container.DisposeAsync();
   }
 
   /// <summary>
@@ -37,7 +37,7 @@ public class PostgresFixture : IAsyncLifetime
   public GoTrainingPlatformDbContext CreateContext()
   {
     var options = new DbContextOptionsBuilder<GoTrainingPlatformDbContext>()
-      .UseNpgsql(container.GetConnectionString())
+      .UseNpgsql(_container.GetConnectionString())
       .UseSnakeCaseNamingConvention()
       .Options;
 

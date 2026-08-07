@@ -5,7 +5,7 @@ namespace Engine.Api.Tests.Analysis;
 
 public class KataGoResponseTests()
 {
-  private static readonly JsonSerializerOptions Options = new()
+  private static readonly JsonSerializerOptions _options = new()
   {
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
   };
@@ -15,7 +15,7 @@ public class KataGoResponseTests()
   {
     string json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Analysis", "TestData", "exampleResponseNoHumanSL.json"));
 
-    KataGoResponse? response = JsonSerializer.Deserialize<KataGoResponse>(json, Options);
+    KataGoResponse? response = JsonSerializer.Deserialize<KataGoResponse>(json, _options);
 
     Assert.NotNull(response);
     Assert.Equal("test", response.Id);
@@ -36,7 +36,7 @@ public class KataGoResponseTests()
   {
     string json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Analysis", "TestData", "exampleResponseWithHumanSL.json"));
 
-    KataGoResponse? response = JsonSerializer.Deserialize<KataGoResponse>(json, Options);
+    KataGoResponse? response = JsonSerializer.Deserialize<KataGoResponse>(json, _options);
 
     Assert.NotNull(response);
     Assert.Equal("test", response.Id);
@@ -58,7 +58,7 @@ public class KataGoResponseTests()
   {
     string json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Analysis", "TestData", "exampleResponseRejected.json"));
 
-    KataGoResponse? response = JsonSerializer.Deserialize<KataGoResponse>(json, Options);
+    KataGoResponse? response = JsonSerializer.Deserialize<KataGoResponse>(json, _options);
 
     Assert.NotNull(response);
     Assert.Equal("test", response.Id);

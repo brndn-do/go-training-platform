@@ -13,8 +13,8 @@ namespace GoTrainingPlatform.Domain;
 /// </summary>
 public class Game
 {
-  private List<Move> moves = [];
-  private GoPosition? goPosition;
+  private List<Move> _moves = [];
+  private GoPosition? _goPosition;
 
   /// <summary>
   /// Initializes a new instance of the <see cref="Game"/> class.
@@ -56,7 +56,7 @@ public class Game
   public Game(IReadOnlyList<Move> moveHistory, Guid id, Guid playerId, Color playerColor, int boardSize, Outcome? outcome, double komi = 7.5, BotStrength botStrength = BotStrength.Superhuman)
     : this(id, playerId, playerColor, boardSize, outcome, komi, botStrength)
   {
-    moves = [.. moveHistory];
+    _moves = [.. moveHistory];
   }
 
   /// <summary>
@@ -102,7 +102,7 @@ public class Game
   /// <summary>
   /// Gets the full, ordered move history.
   /// </summary>
-  public IReadOnlyList<Move> Moves => moves;
+  public IReadOnlyList<Move> Moves => _moves;
 
   /// <summary>
   /// Gets the current board state.
@@ -123,17 +123,17 @@ public class Game
   /// </summary>
   public void BuildPosition()
   {
-    goPosition = new GoPosition(BoardSize, Komi);
+    _goPosition = new GoPosition(BoardSize, Komi);
 
-    foreach (var move in moves)
+    foreach (var move in _moves)
     {
       if (move.Coordinates is null)
       {
-        goPosition.Pass();
+        _goPosition.Pass();
       }
       else
       {
-        goPosition.TryMakeMove(move.Coordinates.X, move.Coordinates.Y);
+        _goPosition.TryMakeMove(move.Coordinates.X, move.Coordinates.Y);
       }
     }
   }
@@ -169,8 +169,8 @@ public class Game
     }
 
     Coordinates coord = new(x, y);
-    Move move = new(coord, moves.Count);
-    moves.Add(move);
+    Move move = new(coord, _moves.Count);
+    _moves.Add(move);
     return true;
   }
 
@@ -196,9 +196,9 @@ public class Game
     }
 
     RequirePosition().Pass();
-    moves.Add(new Move(null, moves.Count));
+    _moves.Add(new Move(null, _moves.Count));
 
-    if (moves.Count >= 2 && moves.TakeLast(2).All(move => move.Coordinates is null))
+    if (_moves.Count >= 2 && _moves.TakeLast(2).All(move => move.Coordinates is null))
     {
       Outcome = Enums.Outcome.TwoConsecutivePasses;
     }
@@ -243,12 +243,12 @@ public class Game
   {
     int undoCount = Turn == PlayerColor ? 2 : 1;
 
-    if (Outcome is not null || moves.Count < undoCount)
+    if (Outcome is not null || _moves.Count < undoCount)
     {
       return false;
     }
 
-    moves = [.. moves.SkipLast(undoCount)];
+    _moves = [.. _moves.SkipLast(undoCount)];
 
     BuildPosition();
 
@@ -263,5 +263,5 @@ public class Game
   };
 
   private GoPosition RequirePosition() =>
-    goPosition ?? throw new InvalidOperationException("Game.BuildPosition was never called.");
+    _goPosition ?? throw new InvalidOperationException("Game.BuildPosition was never called.");
 }
