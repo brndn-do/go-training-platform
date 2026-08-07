@@ -23,6 +23,14 @@ dotnet_diagnostic.CS1591.severity = none
 # Private fields use a leading underscore (_camelCase), the common .NET convention this rule forbids.
 dotnet_diagnostic.SA1309.severity = none
 
+# Require a leading underscore on private instance/mutable-static fields.
+# Neither covers `private static readonly` fields.
+dotnet_diagnostic.SX1309.severity = warning
+dotnet_diagnostic.SX1309S.severity = warning
+
+# Would require private static readonly fields to start upper-case.
+dotnet_diagnostic.SA1311.severity = none
+
 # Vendored third-party source — not ours to reformat or lint.
 [backend/src/GoSharp/**/*.cs]
 generated_code = true
