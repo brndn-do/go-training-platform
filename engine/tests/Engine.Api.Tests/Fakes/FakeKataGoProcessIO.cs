@@ -2,7 +2,7 @@ using Engine.Api.Processes;
 
 namespace Engine.Api.Tests.Fakes;
 
-public class FakeKataGoProcessIO(string?[] responses, TaskCompletionSource<string?>[] gates) : IKataGoProcessIO
+public sealed class FakeKataGoProcessIO(string?[] responses, TaskCompletionSource<string?>[] gates) : IKataGoProcessIO
 {
   private int _callCount;
 

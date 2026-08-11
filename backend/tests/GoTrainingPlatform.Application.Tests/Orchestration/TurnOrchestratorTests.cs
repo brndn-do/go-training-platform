@@ -6,7 +6,7 @@ using GoTrainingPlatform.Domain.Enums;
 
 namespace GoTrainingPlatform.Application.Tests.Orchestration;
 
-public class TurnOrchestratorTests
+public sealed class TurnOrchestratorTests
 {
   [Fact]
   public async Task StartGameAsync_PlayerColorBlack_ReturnsGameAndHintWithoutBotPlay()

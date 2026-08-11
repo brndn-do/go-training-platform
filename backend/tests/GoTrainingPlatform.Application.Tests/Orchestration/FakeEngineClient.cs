@@ -10,7 +10,7 @@ namespace GoTrainingPlatform.Application.Tests.Orchestration;
 /// extra call likely signals a bug in the code under test, not something to silently tolerate.
 /// Used to test <see cref="TurnOrchestrator"/>'s own logic in isolation.
 /// </summary>
-public class FakeEngineClient(IReadOnlyList<EngineSuggestion> suggestions) : IEngineClient
+public sealed class FakeEngineClient(IReadOnlyList<EngineSuggestion> suggestions) : IEngineClient
 {
   public int CallCount { get; private set; }
 

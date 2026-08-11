@@ -12,7 +12,7 @@ namespace GoTrainingPlatform.Infrastructure;
 /// DI registration, reading the connection string from configuration instead
 /// of the hardcoded one below.
 /// </summary>
-public class GoTrainingPlatformDbContextFactory : IDesignTimeDbContextFactory<GoTrainingPlatformDbContext>
+public sealed class GoTrainingPlatformDbContextFactory : IDesignTimeDbContextFactory<GoTrainingPlatformDbContext>
 {
   /// <summary>
   /// Builds the <see cref="GoTrainingPlatformDbContext"/> the <c>dotnet ef</c>

@@ -11,7 +11,7 @@ namespace GoTrainingPlatform.Domain;
 /// or by EF Core loading a persisted game), call <see cref="BuildPosition"/>
 /// explicitly afterward, before trusting <see cref="Turn"/> or <see cref="GetBoard"/>.
 /// </summary>
-public class Game
+public sealed class Game
 {
   private List<Move> _moves = [];
   private GoPosition? _goPosition;

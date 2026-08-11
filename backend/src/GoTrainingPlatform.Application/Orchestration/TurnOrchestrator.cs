@@ -9,7 +9,7 @@ namespace GoTrainingPlatform.Application.Orchestration;
 /// decides whether the bot should respond next, asking <see cref="IEngineClient"/> for its
 /// move when it should.
 /// </summary>
-public class TurnOrchestrator(GameService gameService, IEngineClient engineClient)
+public sealed class TurnOrchestrator(GameService gameService, IEngineClient engineClient)
 {
   /// <summary>
   /// Starts a new game for a human player.

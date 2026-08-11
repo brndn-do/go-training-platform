@@ -2,7 +2,7 @@ using GoTrainingPlatform.Domain.Enums;
 
 namespace GoTrainingPlatform.Domain.Tests;
 
-public class GoPositionTests
+public sealed class GoPositionTests
 {
   [Theory]
   [InlineData(0)]

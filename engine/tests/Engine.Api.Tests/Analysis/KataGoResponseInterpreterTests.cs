@@ -2,7 +2,7 @@ using Engine.Api.Analysis;
 
 namespace Engine.Api.Tests.Analysis;
 
-public class KataGoResponseInterpreterTests()
+public sealed class KataGoResponseInterpreterTests()
 {
   [Theory]
   [InlineData("test error", true, 0.5, true)]

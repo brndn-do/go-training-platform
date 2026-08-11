@@ -6,6 +6,6 @@ namespace GoTrainingPlatform.Infrastructure.Tests;
 /// instead of paying container-startup cost per test class.
 /// </summary>
 [CollectionDefinition("Postgres")]
-public class PostgresCollection : ICollectionFixture<PostgresFixture>
+public sealed class PostgresCollection : ICollectionFixture<PostgresFixture>
 {
 }

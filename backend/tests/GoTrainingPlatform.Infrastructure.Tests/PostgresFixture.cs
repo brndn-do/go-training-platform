@@ -8,7 +8,7 @@ namespace GoTrainingPlatform.Infrastructure.Tests;
 /// collection, migrated once via <see cref="GoTrainingPlatformDbContext"/>'s
 /// real EF Core migrations — not a mock or an in-memory provider.
 /// </summary>
-public class PostgresFixture : IAsyncLifetime
+public sealed class PostgresFixture : IAsyncLifetime
 {
   private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:16-alpine").Build();
 

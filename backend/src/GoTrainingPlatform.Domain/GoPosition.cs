@@ -8,7 +8,7 @@ namespace GoTrainingPlatform.Domain;
 /// Represents a single Go position — the current board state and whose turn it is to
 /// play — enforcing move legality by wrapping the vendored GoSharp rules engine.
 /// </summary>
-public class GoPosition
+public sealed class GoPosition
 {
   private readonly int _boardSize;
   private GoSharp.Game _goSharpGame;

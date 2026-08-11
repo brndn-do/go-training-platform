@@ -3,7 +3,7 @@ using Engine.Api.Analysis;
 
 namespace Engine.Api.Tests.Analysis;
 
-public class KataGoResponseTests()
+public sealed class KataGoResponseTests()
 {
   private static readonly JsonSerializerOptions _options = new()
   {

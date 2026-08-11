@@ -11,7 +11,7 @@ namespace GoTrainingPlatform.Application.Games;
 /// (human or bot) or whether they're authorized to act as the given color; a separate
 /// orchestrator, is responsible for that sequencing and verification.
 /// </summary>
-public class GameService(IGameRepository gameRepository)
+public sealed class GameService(IGameRepository gameRepository)
 {
   /// <summary>
   /// Starts a new game for a human player and persists it.

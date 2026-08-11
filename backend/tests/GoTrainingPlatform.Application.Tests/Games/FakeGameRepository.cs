@@ -7,7 +7,7 @@ namespace GoTrainingPlatform.Application.Tests.Games;
 /// In-memory <see cref="IGameRepository"/>, used to test <see cref="GameService"/>'s
 /// own orchestration logic in isolation.
 /// </summary>
-public class FakeGameRepository : IGameRepository
+public sealed class FakeGameRepository : IGameRepository
 {
   private readonly Dictionary<Guid, Game> _games = [];
 

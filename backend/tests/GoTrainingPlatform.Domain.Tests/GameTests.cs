@@ -2,7 +2,7 @@ using GoTrainingPlatform.Domain.Enums;
 
 namespace GoTrainingPlatform.Domain.Tests;
 
-public class GameTests
+public sealed class GameTests
 {
   [Fact]
   public void Constructor_MoveHistory_StoresMovesWithoutReplaying()

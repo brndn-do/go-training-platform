@@ -2,7 +2,7 @@ using Engine.Api.Analysis;
 
 namespace Engine.Api.Tests.Fakes;
 
-public class FakeKataGoClient(KataGoResponse responseToReturn) : IKataGoClient
+public sealed class FakeKataGoClient(KataGoResponse responseToReturn) : IKataGoClient
 {
   public KataGoQuery? QueryReceived { get; private set; }
 

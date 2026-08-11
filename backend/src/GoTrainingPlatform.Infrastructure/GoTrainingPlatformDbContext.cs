@@ -6,7 +6,7 @@ namespace GoTrainingPlatform.Infrastructure;
 /// <summary>
 /// EF Core context for the platform's persisted state.
 /// </summary>
-public class GoTrainingPlatformDbContext(DbContextOptions<GoTrainingPlatformDbContext> options)
+public sealed class GoTrainingPlatformDbContext(DbContextOptions<GoTrainingPlatformDbContext> options)
   : DbContext(options)
 {
   /// <summary>

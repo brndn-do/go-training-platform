@@ -2,7 +2,7 @@ using static Engine.Api.Extensions.DoubleExtensions;
 
 namespace Engine.Api.Tests.Extensions;
 
-public class DoubleExtensionsTests
+public sealed class DoubleExtensionsTests
 {
   [Theory]
   [InlineData(-.75)]

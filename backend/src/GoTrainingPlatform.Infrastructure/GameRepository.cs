@@ -7,7 +7,7 @@ namespace GoTrainingPlatform.Infrastructure;
 /// <summary>
 /// EF Core implementation of <see cref="IGameRepository"/>.
 /// </summary>
-public class GameRepository(GoTrainingPlatformDbContext context) : IGameRepository
+public sealed class GameRepository(GoTrainingPlatformDbContext context) : IGameRepository
 {
   /// <inheritdoc/>
   public async Task<Game?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

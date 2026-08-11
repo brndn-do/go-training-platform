@@ -3,7 +3,7 @@ using Engine.Api.Tests.Fakes;
 
 namespace Engine.Api.Tests.Analysis;
 
-public class SuggestionServiceTests()
+public sealed class SuggestionServiceTests()
 {
   [Fact]
   public async Task GetSuggestionAsync_SuperhumanStrength_ReturnsInterpretedSuggestion()

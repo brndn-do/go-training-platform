@@ -4,7 +4,7 @@ using Engine.Api.Tests.Fakes;
 
 namespace Engine.Api.Tests.Processes;
 
-public class KataGoClientTests
+public sealed class KataGoClientTests
 {
   [Fact]
   public async Task QueryAsync_SingleQuery_ReturnsDeserializedResponse()

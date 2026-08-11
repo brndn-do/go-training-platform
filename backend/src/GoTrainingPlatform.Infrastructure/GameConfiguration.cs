@@ -7,7 +7,7 @@ namespace GoTrainingPlatform.Infrastructure;
 /// <summary>
 /// EF Core mapping for <see cref="Game"/>.
 /// </summary>
-public class GameConfiguration : IEntityTypeConfiguration<Game>
+public sealed class GameConfiguration : IEntityTypeConfiguration<Game>
 {
   /// <inheritdoc/>
   public void Configure(EntityTypeBuilder<Game> builder)

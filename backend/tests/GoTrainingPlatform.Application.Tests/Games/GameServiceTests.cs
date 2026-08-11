@@ -4,7 +4,7 @@ using GoTrainingPlatform.Domain.Enums;
 
 namespace GoTrainingPlatform.Application.Tests.Games;
 
-public class GameServiceTests
+public sealed class GameServiceTests
 {
   [Fact]
   public async Task StartGameAsync_ValidInput_CreatesAndPersistsGame()

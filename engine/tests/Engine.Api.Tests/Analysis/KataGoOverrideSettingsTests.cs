@@ -2,7 +2,7 @@ using Engine.Api.Analysis;
 
 namespace Engine.Api.Tests.Analysis;
 
-public class KataGoOverrideSettingsTests()
+public sealed class KataGoOverrideSettingsTests()
 {
   [Theory]
   [InlineData("Kyu5", "rank_5k")]

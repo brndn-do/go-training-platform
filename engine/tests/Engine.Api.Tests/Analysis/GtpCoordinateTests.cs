@@ -2,7 +2,7 @@ using Engine.Api.Analysis;
 
 namespace Engine.Api.Tests.Analysis;
 
-public class GtpCoordinateTests()
+public sealed class GtpCoordinateTests()
 {
   [Theory]
   [InlineData(-1)]

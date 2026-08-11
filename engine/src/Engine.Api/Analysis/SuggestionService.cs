@@ -4,7 +4,7 @@ namespace Engine.Api.Analysis;
 /// Gets a suggested move and win rate for a position by querying KataGo and interpreting its
 /// response.
 /// </summary>
-public class SuggestionService(IKataGoClient kataGoClient, Random random)
+public sealed class SuggestionService(IKataGoClient kataGoClient, Random random)
 {
   /// <summary>
   /// Gets a suggested move and win rate for the position resulting from replaying

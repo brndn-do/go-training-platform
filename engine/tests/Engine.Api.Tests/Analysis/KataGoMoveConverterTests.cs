@@ -2,7 +2,7 @@ using Engine.Api.Analysis;
 
 namespace Engine.Api.Tests.Analysis;
 
-public class KataGoMoveConverterTests()
+public sealed class KataGoMoveConverterTests()
 {
   [Fact]
   public void Convert_EmptyHistory_ReturnsEmptyList()
