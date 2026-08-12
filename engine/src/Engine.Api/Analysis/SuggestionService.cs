@@ -18,6 +18,20 @@ public sealed class SuggestionService(IKataGoClient kataGoClient, Random random)
   /// <param name="botStrength">The bot strength formatted as Kyu20, Dan9, Superhuman, etc.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>The suggested move (<c>null</c> for pass) and the resulting win rate.</returns>
+  /// <exception cref="ArgumentOutOfRangeException">
+  /// Thrown when <paramref name="boardSize"/> is not between 2 and 19, when
+  /// <paramref name="komi"/> is not between -150 and 150, or when <paramref name="botStrength"/>
+  /// doesn't match a valid Kyu/Dan format. Bubbles up from <see cref="KataGoQuery"/>'s constructor.
+  /// </exception>
+  /// <exception cref="ArgumentException">
+  /// Thrown when <paramref name="komi"/> is not an integer or half-integer. Bubbles up from
+  /// <see cref="KataGoQuery"/>'s constructor.
+  /// </exception>
+  /// <exception cref="InvalidKataGoResponseException">
+  /// Thrown when KataGo's response is an error response, or its policy, win rate, or policy
+  /// length is invalid for the requested <paramref name="botStrength"/>. Bubbles up from
+  /// <see cref="KataGoResponseInterpreter.Interpret(KataGoResponse, string, Random)"/>.
+  /// </exception>
   public async Task<SuggestionResponse> GetSuggestionAsync(
     IReadOnlyList<Move?> moveHistory,
     int boardSize,

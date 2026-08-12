@@ -19,7 +19,7 @@ public static partial class KataGoResponseInterpreter
   /// <param name="botStrength">The bot strength formatted as Kyu20, Dan9, Superhuman, etc.</param>
   /// <param name="random">The source of randomness used for proportional sampling at human-ranked strengths.</param>
   /// <returns>The chosen move (<c>null</c> for pass) and the resulting win rate.</returns>
-  /// <exception cref="ArgumentException">
+  /// <exception cref="InvalidKataGoResponseException">
   /// Thrown when <paramref name="response"/> is an error response, or its policy, win rate, or
   /// policy length is invalid for the requested <paramref name="botStrength"/>.
   /// </exception>
@@ -33,7 +33,7 @@ public static partial class KataGoResponseInterpreter
   {
     if (response.IsError)
     {
-      throw new ArgumentException("Invalid response.", nameof(response));
+      throw new InvalidKataGoResponseException("KataGo returned an error");
     }
 
     if (botStrength == Superhuman)
@@ -58,18 +58,18 @@ public static partial class KataGoResponseInterpreter
   {
     if (policyToUse is null)
     {
-      throw new ArgumentException("The provided policy to use is null.", nameof(policyToUse));
+      throw new InvalidKataGoResponseException("The provided policy to use is null.");
     }
 
     if (winRateToUse is null)
     {
-      throw new ArgumentException("The provided win rate to use is null.", nameof(winRateToUse));
+      throw new InvalidKataGoResponseException("The provided win rate to use is null.");
     }
 
     double tryGetBoardSize = Math.Sqrt(policyToUse.Length - 1);
     if (tryGetBoardSize != Math.Floor(tryGetBoardSize))
     {
-      throw new ArgumentException("The provided policy has an invalid length.", nameof(policyToUse));
+      throw new InvalidKataGoResponseException("The provided policy has an invalid length.");
     }
 
     int boardSize = (int)tryGetBoardSize;

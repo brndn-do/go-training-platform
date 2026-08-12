@@ -9,7 +9,7 @@ public sealed class KataGoResponseInterpreterTests()
   [InlineData(null, false, 0.5, true)]
   [InlineData(null, true, null, true)]
   [InlineData(null, true, 0.5, false)] // 83 - 1 = 82 is not a perfect square
-  public void Interpet_InvalidResponseSuperhumanStrength_ThrowsArgumentException(
+  public void Interpret_InvalidResponseSuperhumanStrength_ThrowsInvalidKataGoResponseException(
     string? error,
     bool includePolicy,
     double? winRate,
@@ -31,7 +31,7 @@ public sealed class KataGoResponseInterpreterTests()
 
     KataGoResponse response = new("test", error, policy, null, rootInfo);
 
-    Assert.Throws<ArgumentException>(() => KataGoResponseInterpreter.Interpret(response, "Superhuman", new Random()));
+    Assert.Throws<InvalidKataGoResponseException>(() => KataGoResponseInterpreter.Interpret(response, "Superhuman", new Random()));
   }
 
   [Theory]
@@ -39,7 +39,7 @@ public sealed class KataGoResponseInterpreterTests()
   [InlineData(null, false, 0.5, true)]
   [InlineData(null, true, null, true)]
   [InlineData(null, true, 0.5, false)] // 83 - 1 = 82 is not a perfect square
-  public void Interpret_InvalidResponseHumanStrength_ThrowsArgumentException(
+  public void Interpret_InvalidResponseHumanStrength_ThrowsInvalidKataGoResponseException(
     string? error,
     bool includeHumanPolicy,
     double? humanWinRate,
@@ -61,7 +61,7 @@ public sealed class KataGoResponseInterpreterTests()
 
     KataGoResponse response = new("test", error, [], humanPolicy, rootInfo);
 
-    Assert.Throws<ArgumentException>(() => KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random()));
+    Assert.Throws<InvalidKataGoResponseException>(() => KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random()));
   }
 
   [Theory]
