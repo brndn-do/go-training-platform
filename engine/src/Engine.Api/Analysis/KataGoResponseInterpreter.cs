@@ -26,7 +26,7 @@ public static partial class KataGoResponseInterpreter
   /// <exception cref="ArgumentOutOfRangeException">
   /// Thrown when <paramref name="botStrength"/> doesn't match a valid Kyu/Dan format.
   /// </exception>
-  public static ((int X, int Y)? Coordinates, double Winrate) Interpret(
+  public static (Move? Move, double Winrate) Interpret(
     KataGoResponse response,
     string botStrength,
     Random random)
@@ -50,7 +50,7 @@ public static partial class KataGoResponseInterpreter
   }
 
   // private helper, specify whether to use argmax or sample proportionally, pass in policy and win rate to use
-  private static ((int X, int Y)? Coordinates, double Winrate) Interpret(
+  private static (Move? Move, double Winrate) Interpret(
     bool useArgMax,
     double[]? policyToUse,
     double? winRateToUse,
@@ -79,11 +79,11 @@ public static partial class KataGoResponseInterpreter
       : new Categorical([.. policyToUse.Select(x => x < 0 ? 0 : x)], random)
         .Sample(); // change -1's to 0's then sample proportionally
 
-    (int X, int Y)? coordinates = i < policyToUse.Length - 1 // not the last element, represents a coordinate on board
-      ? (i % boardSize, boardSize - 1 - (i / boardSize)) // KataGo returns top row first, so flip the y-axis
+    Move? move = i < policyToUse.Length - 1 // not the last element, represents a coordinate on board
+      ? new Move(i % boardSize, boardSize - 1 - (i / boardSize)) // KataGo returns top row first, so flip the y-axis
       : null; // last index means a pass
 
-    return (coordinates, (double)winRateToUse);
+    return (move, (double)winRateToUse);
   }
 
   [GeneratedRegex(@"^(Kyu(20|1[0-9]|[1-9])|Dan[1-9])$")]

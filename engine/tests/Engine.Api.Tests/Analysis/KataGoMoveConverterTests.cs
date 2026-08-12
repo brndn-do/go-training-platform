@@ -15,7 +15,7 @@ public sealed class KataGoMoveConverterTests()
   [Fact]
   public void Convert_SingleMove_ReturnsBlackMove()
   {
-    IReadOnlyList<(int X, int Y)?> moves = [(4, 4)];
+    IReadOnlyList<Move?> moves = [new Move(4, 4)];
 
     IReadOnlyList<string[]> result = KataGoMoveConverter.Convert(moves);
 
@@ -26,7 +26,7 @@ public sealed class KataGoMoveConverterTests()
   public void Convert_MultipleMoves_AlternatesColorByIndex()
   {
     // Matches an earlier real query: [["B","E5"],["W","C3"],["B","G3"]]
-    IReadOnlyList<(int X, int Y)?> moves = [(4, 4), (2, 2), (6, 2)];
+    IReadOnlyList<Move?> moves = [new Move(4, 4), new Move(2, 2), new Move(6, 2)];
 
     IReadOnlyList<string[]> result = KataGoMoveConverter.Convert(moves);
 
@@ -38,7 +38,7 @@ public sealed class KataGoMoveConverterTests()
   [Fact]
   public void Convert_NullCoordinates_ReturnsPass()
   {
-    IReadOnlyList<(int X, int Y)?> moves = [(4, 4), null];
+    IReadOnlyList<Move?> moves = [new Move(4, 4), null];
 
     IReadOnlyList<string[]> result = KataGoMoveConverter.Convert(moves);
 

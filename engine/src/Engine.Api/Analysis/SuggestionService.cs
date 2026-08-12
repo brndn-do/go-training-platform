@@ -18,8 +18,8 @@ public sealed class SuggestionService(IKataGoClient kataGoClient, Random random)
   /// <param name="botStrength">The bot strength formatted as Kyu20, Dan9, Superhuman, etc.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>The suggested move (<c>null</c> for pass) and the resulting win rate.</returns>
-  public async Task<((int X, int Y)? Coordinates, double Winrate)> GetSuggestionAsync(
-    IReadOnlyList<(int X, int Y)?> moveHistory,
+  public async Task<(Move? Move, double Winrate)> GetSuggestionAsync(
+    IReadOnlyList<Move?> moveHistory,
     int boardSize,
     double komi,
     string botStrength,

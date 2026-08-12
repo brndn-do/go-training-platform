@@ -30,7 +30,7 @@ public sealed record KataGoQuery
   /// </exception>
   public KataGoQuery(
     string id,
-    IReadOnlyList<(int X, int Y)?> moveHistory,
+    IReadOnlyList<Move?> moveHistory,
     int boardSize,
     double komi,
     string botStrength)

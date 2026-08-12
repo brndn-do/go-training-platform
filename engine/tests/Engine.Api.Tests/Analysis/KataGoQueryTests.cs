@@ -41,7 +41,7 @@ public sealed class KataGoQueryTests()
   [Fact]
   public void Serialize_RankedQuery_ProducesExpectedJsonShape()
   {
-    var query = new KataGoQuery("test", [(4, 4), (2, 2)], 19, 7.5, "Kyu5");
+    var query = new KataGoQuery("test", [new Move(4, 4), new Move(2, 2)], 19, 7.5, "Kyu5");
 
     JsonDocument doc = JsonDocument.Parse(JsonSerializer.Serialize(query, _options));
     JsonElement root = doc.RootElement;

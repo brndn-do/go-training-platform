@@ -76,9 +76,9 @@ public sealed class KataGoResponseInterpreterTests()
     KataGoRootInfo rootInfo = new(0.5, null);
     KataGoResponse response = new("test", null, policy, null, rootInfo);
 
-    var (coordinates, winRate) = KataGoResponseInterpreter.Interpret(response, "Superhuman", new Random());
+    var (move, winRate) = KataGoResponseInterpreter.Interpret(response, "Superhuman", new Random());
 
-    Assert.Equal((expectedX, expectedY), coordinates);
+    Assert.Equal(new Move(expectedX, expectedY), move);
     Assert.Equal(0.5, winRate);
   }
 
@@ -90,9 +90,9 @@ public sealed class KataGoResponseInterpreterTests()
     KataGoRootInfo rootInfo = new(0.5, null);
     KataGoResponse response = new("test", null, policy, null, rootInfo);
 
-    var (coordinates, winRate) = KataGoResponseInterpreter.Interpret(response, "Superhuman", new Random());
+    var (move, winRate) = KataGoResponseInterpreter.Interpret(response, "Superhuman", new Random());
 
-    Assert.Null(coordinates);
+    Assert.Null(move);
     Assert.Equal(0.5, winRate);
   }
 
@@ -104,9 +104,9 @@ public sealed class KataGoResponseInterpreterTests()
     KataGoRootInfo rootInfo = new(0.5, null);
     KataGoResponse response = new("test", null, policy, null, rootInfo);
 
-    var (coordinates, winRate) = KataGoResponseInterpreter.Interpret(response, "Superhuman", new Random());
+    var (move, winRate) = KataGoResponseInterpreter.Interpret(response, "Superhuman", new Random());
 
-    Assert.Equal((2, 2), coordinates);
+    Assert.Equal(new Move(2, 2), move);
     Assert.Equal(0.5, winRate);
   }
 
@@ -125,11 +125,11 @@ public sealed class KataGoResponseInterpreterTests()
     KataGoRootInfo rootInfo = new(0.5, 0.6);
     KataGoResponse response = new("test", null, [], humanPolicy, rootInfo);
 
-    var (coordinatesA, winRateA) = KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random(1));
-    var (coordinatesB, winRateB) = KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random(999));
+    var (moveA, winRateA) = KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random(1));
+    var (moveB, winRateB) = KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random(999));
 
-    Assert.Equal((expectedX, expectedY), coordinatesA);
-    Assert.Equal((expectedX, expectedY), coordinatesB);
+    Assert.Equal(new Move(expectedX, expectedY), moveA);
+    Assert.Equal(new Move(expectedX, expectedY), moveB);
     Assert.Equal(0.6, winRateA);
     Assert.Equal(0.6, winRateB);
   }
@@ -142,11 +142,11 @@ public sealed class KataGoResponseInterpreterTests()
     KataGoRootInfo rootInfo = new(0.5, 0.6);
     KataGoResponse response = new("test", null, [], humanPolicy, rootInfo);
 
-    var (coordinatesA, _) = KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random(1));
-    var (coordinatesB, _) = KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random(999));
+    var (moveA, _) = KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random(1));
+    var (moveB, _) = KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random(999));
 
-    Assert.Null(coordinatesA);
-    Assert.Null(coordinatesB);
+    Assert.Null(moveA);
+    Assert.Null(moveB);
   }
 
   [Theory]

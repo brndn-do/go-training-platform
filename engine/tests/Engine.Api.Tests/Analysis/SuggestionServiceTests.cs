@@ -12,9 +12,9 @@ public sealed class SuggestionServiceTests()
     KataGoRootInfo rootInfo = new(0.5, null);
     KataGoResponse response = new("test", null, policy, null, rootInfo);
 
-    var (coordinates, winRate) = await Service(response).GetSuggestionAsync([(1, 1)], 3, 7.5, "Superhuman");
+    var (move, winRate) = await Service(response).GetSuggestionAsync([new Move(1, 1)], 3, 7.5, "Superhuman");
 
-    Assert.Equal((0, 0), coordinates);
+    Assert.Equal(new Move(0, 0), move);
     Assert.Equal(0.5, winRate);
   }
 
@@ -27,11 +27,11 @@ public sealed class SuggestionServiceTests()
     KataGoRootInfo rootInfo = new(0.5, 0.6);
     KataGoResponse response = new("test", null, [], humanPolicy, rootInfo);
 
-    var (coordinatesA, winRateA) = await Service(response).GetSuggestionAsync([(1, 1)], 3, 7.5, "Kyu5");
-    var (coordinatesB, winRateB) = await Service(response).GetSuggestionAsync([(1, 1)], 3, 7.5, "Kyu5");
+    var (moveA, winRateA) = await Service(response).GetSuggestionAsync([new Move(1, 1)], 3, 7.5, "Kyu5");
+    var (moveB, winRateB) = await Service(response).GetSuggestionAsync([new Move(1, 1)], 3, 7.5, "Kyu5");
 
-    Assert.Equal((0, 0), coordinatesA);
-    Assert.Equal((0, 0), coordinatesB);
+    Assert.Equal(new Move(0, 0), moveA);
+    Assert.Equal(new Move(0, 0), moveB);
     Assert.Equal(0.6, winRateA);
     Assert.Equal(0.6, winRateB);
   }
@@ -46,7 +46,7 @@ public sealed class SuggestionServiceTests()
     FakeKataGoClient fakeKataGoClient = new(response);
     SuggestionService service = new(fakeKataGoClient, new Random());
 
-    IReadOnlyList<(int X, int Y)?> moveHistory = [(1, 1), null, (0, 2)];
+    IReadOnlyList<Move?> moveHistory = [new Move(1, 1), null, new Move(0, 2)];
 
     await service.GetSuggestionAsync(moveHistory, 3, 6.5, "Kyu5");
 
