@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 namespace GoTrainingPlatform.Infrastructure.Tests;
 
 [Collection("Postgres")]
-public sealed class GameRepositoryTests(PostgresFixture postgresFixture)
+[Trait("Category", "Integration")]
+public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixture)
 {
   [Fact]
   public async Task GetByIdAsync_NonExistentId_ReturnsNull()
