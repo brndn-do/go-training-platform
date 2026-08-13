@@ -17,7 +17,7 @@ public sealed class KataGoClientTests
     FakeKataGoProcessIO fakeIO = new(responses, [gate]);
     KataGoClient client = new(fakeIO);
 
-    KataGoQuery query = new("test", [], 9, 7.5, "Superhuman");
+    KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
 
     KataGoResponse response = await client.QueryAsync(query);
 
@@ -38,7 +38,7 @@ public sealed class KataGoClientTests
     FakeKataGoProcessIO fakeIO = new(responses, [gate]);
     KataGoClient client = new(fakeIO);
 
-    KataGoQuery query = new("test", [], 9, 7.5, "Superhuman");
+    KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
 
     await client.QueryAsync(query);
 
@@ -62,8 +62,8 @@ public sealed class KataGoClientTests
     FakeKataGoProcessIO fakeIO = new(responses, [gate1, gate2]);
     KataGoClient client = new(fakeIO);
 
-    KataGoQuery query1 = new("test1", [], 9, 7.5, "Superhuman");
-    KataGoQuery query2 = new("test2", [], 9, 7.5, "Superhuman");
+    KataGoQuery query1 = new("test1", [], 9, 7.5, new BotStrength("Superhuman"));
+    KataGoQuery query2 = new("test2", [], 9, 7.5, new BotStrength("Superhuman"));
 
     var task1 = client.QueryAsync(query1);
     var task2 = client.QueryAsync(query2);
@@ -92,8 +92,8 @@ public sealed class KataGoClientTests
     FakeKataGoProcessIO fakeIO = new(responses, [gate1, gate2]);
     KataGoClient client = new(fakeIO);
 
-    KataGoQuery query1 = new("test1", [], 9, 7.5, "Superhuman");
-    KataGoQuery query2 = new("test2", [], 9, 7.5, "Superhuman");
+    KataGoQuery query1 = new("test1", [], 9, 7.5, new BotStrength("Superhuman"));
+    KataGoQuery query2 = new("test2", [], 9, 7.5, new BotStrength("Superhuman"));
 
     using CancellationTokenSource callerCts = new();
 
@@ -142,9 +142,9 @@ public sealed class KataGoClientTests
     FakeKataGoProcessIO fakeIO = new(responses, [gate1, gate3]);
     KataGoClient client = new(fakeIO);
 
-    KataGoQuery query1 = new("test1", [], 9, 7.5, "Superhuman");
-    KataGoQuery query2 = new("test2", [], 9, 7.5, "Superhuman");
-    KataGoQuery query3 = new("test3", [], 9, 7.5, "Superhuman");
+    KataGoQuery query1 = new("test1", [], 9, 7.5, new BotStrength("Superhuman"));
+    KataGoQuery query2 = new("test2", [], 9, 7.5, new BotStrength("Superhuman"));
+    KataGoQuery query3 = new("test3", [], 9, 7.5, new BotStrength("Superhuman"));
 
     using CancellationTokenSource callerCts = new();
 
@@ -201,7 +201,7 @@ public sealed class KataGoClientTests
     FakeKataGoProcessIO fakeIO = new(responses, [gate]);
     KataGoClient client = new(fakeIO);
 
-    KataGoQuery query = new("test", [], 9, 7.5, "Superhuman");
+    KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
 
     KataGoResponse response = await client.QueryAsync(query);
 
@@ -221,7 +221,7 @@ public sealed class KataGoClientTests
     FakeKataGoProcessIO fakeIO = new(responses, [gate]);
     KataGoClient client = new(fakeIO);
 
-    KataGoQuery query = new("test", [], 9, 7.5, "Superhuman");
+    KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
 
     KataGoResponse response = await client.QueryAsync(query);
 
@@ -244,7 +244,7 @@ public sealed class KataGoClientTests
     FakeKataGoProcessIO fakeIO = new(responses, [gate]);
     KataGoClient client = new(fakeIO, shutdownGracePeriodMs);
 
-    KataGoQuery query = new("test", [], 9, 7.5, "Superhuman");
+    KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
     var task = client.QueryAsync(query);
 
     await WaitForConditionAsync(
@@ -278,7 +278,7 @@ public sealed class KataGoClientTests
     FakeKataGoProcessIO fakeIO = new(responses, [gate]);
     KataGoClient client = new(fakeIO, shutdownGracePeriodMs);
 
-    KataGoQuery query = new("test", [], 9, 7.5, "Superhuman");
+    KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
     var task = client.QueryAsync(query);
 
     await WaitForConditionAsync(

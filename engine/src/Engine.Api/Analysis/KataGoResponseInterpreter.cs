@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using MathNet.Numerics.Distributions;
 
 namespace Engine.Api.Analysis;
@@ -8,27 +7,22 @@ namespace Engine.Api.Analysis;
 /// strength picks the single best move via argmax over <see cref="KataGoResponse.Policy"/>;
 /// human-ranked strengths sample proportionally from <see cref="KataGoResponse.HumanPolicy"/>.
 /// </summary>
-public static partial class KataGoResponseInterpreter
+public static class KataGoResponseInterpreter
 {
-  private const string Superhuman = "Superhuman";
-
   /// <summary>
   /// Interprets a <see cref="KataGoResponse"/> for the given bot strength.
   /// </summary>
   /// <param name="response">The response to interpret.</param>
-  /// <param name="botStrength">The bot strength formatted as Kyu20, Dan9, Superhuman, etc.</param>
+  /// <param name="botStrength">The bot strength.</param>
   /// <param name="random">The source of randomness used for proportional sampling at human-ranked strengths.</param>
   /// <returns>The chosen move (<c>null</c> for pass) and the resulting win rate.</returns>
   /// <exception cref="InvalidKataGoResponseException">
   /// Thrown when <paramref name="response"/> is an error response, or its policy, win rate, or
   /// policy length is invalid for the requested <paramref name="botStrength"/>.
   /// </exception>
-  /// <exception cref="ArgumentOutOfRangeException">
-  /// Thrown when <paramref name="botStrength"/> doesn't match a valid Kyu/Dan format.
-  /// </exception>
   public static (Move? Move, double Winrate) Interpret(
     KataGoResponse response,
-    string botStrength,
+    BotStrength botStrength,
     Random random)
   {
     if (response.IsError)
@@ -36,14 +30,9 @@ public static partial class KataGoResponseInterpreter
       throw new InvalidKataGoResponseException("KataGo returned an error");
     }
 
-    if (botStrength == Superhuman)
+    if (botStrength.IsSuperhuman)
     {
       return Interpret(true, response.Policy, response.RootInfo?.Winrate, random);
-    }
-
-    if (!Pattern().IsMatch(botStrength))
-    {
-      throw new ArgumentOutOfRangeException(nameof(botStrength), "Invalid bot strength.");
     }
 
     return Interpret(false, response.HumanPolicy, response.RootInfo?.HumanWinrate, random);
@@ -85,7 +74,4 @@ public static partial class KataGoResponseInterpreter
 
     return (move, (double)winRateToUse);
   }
-
-  [GeneratedRegex(@"^(Kyu(20|1[0-9]|[1-9])|Dan[1-9])$")]
-  private static partial Regex Pattern();
 }

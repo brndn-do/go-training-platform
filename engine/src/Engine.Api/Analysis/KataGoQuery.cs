@@ -8,7 +8,6 @@ namespace Engine.Api.Analysis;
 public sealed record KataGoQuery
 {
   private const string DefaultRules = "chinese";
-  private const string Superhuman = "Superhuman";
 
   /// <summary>
   /// Initializes a new instance of the <see cref="KataGoQuery"/> class.
@@ -19,11 +18,10 @@ public sealed record KataGoQuery
   /// </param>
   /// <param name="boardSize">The width and height of the (square) board.</param>
   /// <param name="komi">The game's komi.</param>
-  /// <param name="botStrength">The bot strength formatted as Kyu20, Dan9, Superhuman, etc.</param>
+  /// <param name="botStrength">The bot strength.</param>
   /// <exception cref="ArgumentOutOfRangeException">
-  /// Thrown when <paramref name="boardSize"/> is not between 2 and 19, when
-  /// <paramref name="komi"/> is not between -150 and 150, or when <paramref name="botStrength"/>
-  /// doesn't match a valid Kyu/Dan format.
+  /// Thrown when <paramref name="boardSize"/> is not between 2 and 19, or when
+  /// <paramref name="komi"/> is not between -150 and 150.
   /// </exception>
   /// <exception cref="ArgumentException">
   /// Thrown when <paramref name="komi"/> is not an integer or half-integer.
@@ -33,7 +31,7 @@ public sealed record KataGoQuery
     IReadOnlyList<Move?> moveHistory,
     int boardSize,
     double komi,
-    string botStrength)
+    BotStrength botStrength)
   {
     ArgumentOutOfRangeException.ThrowIfLessThan(boardSize, 2);
     ArgumentOutOfRangeException.ThrowIfGreaterThan(boardSize, 19);
@@ -52,7 +50,7 @@ public sealed record KataGoQuery
     Moves = KataGoMoveConverter.Convert(moveHistory);
     Rules = DefaultRules;
     IncludePolicy = true;
-    OverrideSettings = botStrength == Superhuman ? null : new KataGoOverrideSettings(botStrength);
+    OverrideSettings = botStrength.IsSuperhuman ? null : new KataGoOverrideSettings(botStrength);
   }
 
   /// <summary>

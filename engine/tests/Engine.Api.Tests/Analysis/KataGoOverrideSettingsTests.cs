@@ -12,22 +12,14 @@ public sealed class KataGoOverrideSettingsTests()
   [InlineData("Dan9", "rank_9d")]
   public void Constructor_ValidBotStrength_MapsToExpectedHumanSLProfile(string botStrength, string expected)
   {
-    var settings = new KataGoOverrideSettings(botStrength);
+    var settings = new KataGoOverrideSettings(new BotStrength(botStrength));
 
     Assert.Equal(expected, settings.HumanSLProfile);
   }
 
-  [Theory]
-  [InlineData("Kyu21")] // above the valid 1-20 kyu range
-  [InlineData("Kyu0")] // below the valid 1-20 kyu range
-  [InlineData("Dan10")] // above the valid 1-9 dan range
-  [InlineData("Dan0")] // below the valid 1-9 dan range
-  [InlineData("")]
-  [InlineData("foo")]
-  [InlineData("kyu5")] // wrong case
-  [InlineData("Superhuman")] // KataGoQuery never passes this, but the constructor should still reject it on its own
-  public void Constructor_InvalidBotStrength_ThrowsArgumentOutOfRangeException(string botStrength)
+  [Fact]
+  public void Constructor_SuperhumanBotStrength_ThrowsArgumentException()
   {
-    Assert.Throws<ArgumentOutOfRangeException>(() => new KataGoOverrideSettings(botStrength));
+    Assert.Throws<ArgumentException>(() => new KataGoOverrideSettings(new BotStrength("Superhuman")));
   }
 }

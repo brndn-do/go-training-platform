@@ -31,7 +31,7 @@ public sealed class KataGoResponseInterpreterTests()
 
     KataGoResponse response = new("test", error, policy, null, rootInfo);
 
-    Assert.Throws<InvalidKataGoResponseException>(() => KataGoResponseInterpreter.Interpret(response, "Superhuman", new Random()));
+    Assert.Throws<InvalidKataGoResponseException>(() => KataGoResponseInterpreter.Interpret(response, new BotStrength("Superhuman"), new Random()));
   }
 
   [Theory]
@@ -61,7 +61,7 @@ public sealed class KataGoResponseInterpreterTests()
 
     KataGoResponse response = new("test", error, [], humanPolicy, rootInfo);
 
-    Assert.Throws<InvalidKataGoResponseException>(() => KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random()));
+    Assert.Throws<InvalidKataGoResponseException>(() => KataGoResponseInterpreter.Interpret(response, new BotStrength("Kyu5"), new Random()));
   }
 
   [Theory]
@@ -76,7 +76,7 @@ public sealed class KataGoResponseInterpreterTests()
     KataGoRootInfo rootInfo = new(0.5, null);
     KataGoResponse response = new("test", null, policy, null, rootInfo);
 
-    var (move, winRate) = KataGoResponseInterpreter.Interpret(response, "Superhuman", new Random());
+    var (move, winRate) = KataGoResponseInterpreter.Interpret(response, new BotStrength("Superhuman"), new Random());
 
     Assert.Equal(new Move(expectedX, expectedY), move);
     Assert.Equal(0.5, winRate);
@@ -90,7 +90,7 @@ public sealed class KataGoResponseInterpreterTests()
     KataGoRootInfo rootInfo = new(0.5, null);
     KataGoResponse response = new("test", null, policy, null, rootInfo);
 
-    var (move, winRate) = KataGoResponseInterpreter.Interpret(response, "Superhuman", new Random());
+    var (move, winRate) = KataGoResponseInterpreter.Interpret(response, new BotStrength("Superhuman"), new Random());
 
     Assert.Null(move);
     Assert.Equal(0.5, winRate);
@@ -104,7 +104,7 @@ public sealed class KataGoResponseInterpreterTests()
     KataGoRootInfo rootInfo = new(0.5, null);
     KataGoResponse response = new("test", null, policy, null, rootInfo);
 
-    var (move, winRate) = KataGoResponseInterpreter.Interpret(response, "Superhuman", new Random());
+    var (move, winRate) = KataGoResponseInterpreter.Interpret(response, new BotStrength("Superhuman"), new Random());
 
     Assert.Equal(new Move(2, 2), move);
     Assert.Equal(0.5, winRate);
@@ -125,8 +125,8 @@ public sealed class KataGoResponseInterpreterTests()
     KataGoRootInfo rootInfo = new(0.5, 0.6);
     KataGoResponse response = new("test", null, [], humanPolicy, rootInfo);
 
-    var (moveA, winRateA) = KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random(1));
-    var (moveB, winRateB) = KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random(999));
+    var (moveA, winRateA) = KataGoResponseInterpreter.Interpret(response, new BotStrength("Kyu5"), new Random(1));
+    var (moveB, winRateB) = KataGoResponseInterpreter.Interpret(response, new BotStrength("Kyu5"), new Random(999));
 
     Assert.Equal(new Move(expectedX, expectedY), moveA);
     Assert.Equal(new Move(expectedX, expectedY), moveB);
@@ -142,26 +142,13 @@ public sealed class KataGoResponseInterpreterTests()
     KataGoRootInfo rootInfo = new(0.5, 0.6);
     KataGoResponse response = new("test", null, [], humanPolicy, rootInfo);
 
-    var (moveA, _) = KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random(1));
-    var (moveB, _) = KataGoResponseInterpreter.Interpret(response, "Kyu5", new Random(999));
+    var (moveA, _) = KataGoResponseInterpreter.Interpret(response, new BotStrength("Kyu5"), new Random(1));
+    var (moveB, _) = KataGoResponseInterpreter.Interpret(response, new BotStrength("Kyu5"), new Random(999));
 
     Assert.Null(moveA);
     Assert.Null(moveB);
   }
 
-  [Theory]
-  [InlineData("Kyu21")] // above the valid 1-20 kyu range
-  [InlineData("Kyu0")] // below the valid 1-20 kyu range
-  [InlineData("Dan10")] // above the valid 1-9 dan range
-  [InlineData("Dan0")] // below the valid 1-9 dan range
-  [InlineData("")]
-  [InlineData("foo")]
-  [InlineData("kyu5")] // wrong case
-  public void Interpret_InvalidBotStrength_ThrowsArgumentOutOfRangeException(string botStrength)
-  {
-    KataGoRootInfo rootInfo = new(0.5, 0.5);
-    KataGoResponse response = new("test", null, [], [], rootInfo);
-
-    Assert.Throws<ArgumentOutOfRangeException>(() => KataGoResponseInterpreter.Interpret(response, botStrength, new Random()));
-  }
+  // An invalid botStrength format can no longer reach Interpret at all — BotStrength's own
+  // constructor rejects it first (see BotStrengthTests).
 }

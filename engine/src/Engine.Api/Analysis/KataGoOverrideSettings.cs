@@ -1,22 +1,25 @@
-using System.Text.RegularExpressions;
-
 namespace Engine.Api.Analysis;
 
 /// <summary>
 /// Override settings for KataGo, including HumanSLProfile, used for the HumanSL model.
 /// </summary>
-public sealed partial record KataGoOverrideSettings
+public sealed record KataGoOverrideSettings
 {
   /// <summary>
   /// Initializes a new instance of the <see cref="KataGoOverrideSettings"/> class.
   /// </summary>
-  /// <param name="botStrength">The bot strength formatted as Kyu20, Dan9 etc.</param>
-  /// <exception cref="ArgumentOutOfRangeException">
-  /// Thrown when <paramref name="botStrength"/> doesn't match a valid Kyu/Dan format.
+  /// <param name="botStrength">The bot strength. Must not be Superhuman.</param>
+  /// <exception cref="ArgumentException">
+  /// Thrown when <paramref name="botStrength"/> is Superhuman.
   /// </exception>
-  public KataGoOverrideSettings(string botStrength)
+  public KataGoOverrideSettings(BotStrength botStrength)
   {
-    HumanSLProfile = MapBotStrength(botStrength);
+    if (botStrength.IsSuperhuman)
+    {
+      throw new ArgumentException("KataGoOverrideSettings cannot be constructed for Superhuman strength.", nameof(botStrength));
+    }
+
+    HumanSLProfile = MapBotStrength(botStrength.Value);
   }
 
   /// <summary>
@@ -24,16 +27,8 @@ public sealed partial record KataGoOverrideSettings
   /// </summary>
   public string HumanSLProfile { get; }
 
-  [GeneratedRegex(@"^(Kyu(20|1[0-9]|[1-9])|Dan[1-9])$")]
-  private static partial Regex Pattern();
-
   private static string MapBotStrength(string botStrength)
   {
-    if (!Pattern().IsMatch(botStrength))
-    {
-      throw new ArgumentOutOfRangeException(nameof(botStrength), "Invalid bot strength");
-    }
-
     int num = int.Parse(botStrength.AsSpan(3));
     char system = botStrength[..3] == "Kyu" ? 'k' : 'd';
 

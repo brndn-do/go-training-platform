@@ -15,7 +15,7 @@ public sealed class KataGoQueryTests()
   [InlineData(20)] // above the valid 2-19 range
   public void Constructor_InvalidBoardSize_ThrowsArgumentOutOfRangeException(int boardSize)
   {
-    Assert.Throws<ArgumentOutOfRangeException>(() => new KataGoQuery("test", [], boardSize, 7.5, "Superhuman"));
+    Assert.Throws<ArgumentOutOfRangeException>(() => new KataGoQuery("test", [], boardSize, 7.5, new BotStrength("Superhuman")));
   }
 
   [Theory]
@@ -23,25 +23,21 @@ public sealed class KataGoQueryTests()
   [InlineData(151)] // above the valid -150 to 150 range
   public void Constructor_KomiOutOfRange_ThrowsArgumentOutOfRangeException(double komi)
   {
-    Assert.Throws<ArgumentOutOfRangeException>(() => new KataGoQuery("test", [], 19, komi, "Superhuman"));
+    Assert.Throws<ArgumentOutOfRangeException>(() => new KataGoQuery("test", [], 19, komi, new BotStrength("Superhuman")));
   }
 
   [Fact]
   public void Constructor_KomiNotIntegerOrHalfInteger_ThrowsArgumentException()
   {
-    Assert.Throws<ArgumentException>(() => new KataGoQuery("test", [], 19, 7.3, "Superhuman"));
+    Assert.Throws<ArgumentException>(() => new KataGoQuery("test", [], 19, 7.3, new BotStrength("Superhuman")));
   }
 
-  [Fact]
-  public void Constructor_InvalidBotStrength_ThrowsArgumentOutOfRangeException()
-  {
-    Assert.Throws<ArgumentOutOfRangeException>(() => new KataGoQuery("test", [], 19, 7.5, "Kyu21"));
-  }
-
+  // An invalid botStrength format can no longer reach this constructor at all — BotStrength's
+  // own constructor rejects it first (see BotStrengthTests).
   [Fact]
   public void Serialize_RankedQuery_ProducesExpectedJsonShape()
   {
-    var query = new KataGoQuery("test", [new Move(4, 4), new Move(2, 2)], 19, 7.5, "Kyu5");
+    var query = new KataGoQuery("test", [new Move(4, 4), new Move(2, 2)], 19, 7.5, new BotStrength("Kyu5"));
 
     JsonDocument doc = JsonDocument.Parse(JsonSerializer.Serialize(query, _options));
     JsonElement root = doc.RootElement;
@@ -72,7 +68,7 @@ public sealed class KataGoQueryTests()
   [Fact]
   public void Serialize_SuperhumanQuery_OverrideSettingsIsNull()
   {
-    var query = new KataGoQuery("test", [], 19, 7.5, "Superhuman");
+    var query = new KataGoQuery("test", [], 19, 7.5, new BotStrength("Superhuman"));
 
     JsonDocument doc = JsonDocument.Parse(JsonSerializer.Serialize(query, _options));
 

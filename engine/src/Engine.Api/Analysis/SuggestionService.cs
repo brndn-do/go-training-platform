@@ -19,9 +19,10 @@ public sealed class SuggestionService(IKataGoClient kataGoClient, Random random)
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>The suggested move (<c>null</c> for pass) and the resulting win rate.</returns>
   /// <exception cref="ArgumentOutOfRangeException">
-  /// Thrown when <paramref name="boardSize"/> is not between 2 and 19, when
-  /// <paramref name="komi"/> is not between -150 and 150, or when <paramref name="botStrength"/>
-  /// doesn't match a valid Kyu/Dan format. Bubbles up from <see cref="KataGoQuery"/>'s constructor.
+  /// Thrown when <paramref name="botStrength"/> is neither "Superhuman" nor a valid Kyu/Dan
+  /// format (bubbles up from <see cref="BotStrength"/>'s constructor), or when
+  /// <paramref name="boardSize"/> is not between 2 and 19, or <paramref name="komi"/> is not
+  /// between -150 and 150 (bubbles up from <see cref="KataGoQuery"/>'s constructor).
   /// </exception>
   /// <exception cref="ArgumentException">
   /// Thrown when <paramref name="komi"/> is not an integer or half-integer. Bubbles up from
@@ -30,7 +31,7 @@ public sealed class SuggestionService(IKataGoClient kataGoClient, Random random)
   /// <exception cref="InvalidKataGoResponseException">
   /// Thrown when KataGo's response is an error response, or its policy, win rate, or policy
   /// length is invalid for the requested <paramref name="botStrength"/>. Bubbles up from
-  /// <see cref="KataGoResponseInterpreter.Interpret(KataGoResponse, string, Random)"/>.
+  /// <see cref="KataGoResponseInterpreter.Interpret(KataGoResponse, BotStrength, Random)"/>.
   /// </exception>
   public async Task<SuggestionResponse> GetSuggestionAsync(
     IReadOnlyList<Move?> moveHistory,
@@ -39,9 +40,10 @@ public sealed class SuggestionService(IKataGoClient kataGoClient, Random random)
     string botStrength,
     CancellationToken cancellationToken = default)
   {
-    KataGoQuery query = new(Guid.NewGuid().ToString(), moveHistory, boardSize, komi, botStrength);
+    BotStrength strength = new(botStrength);
+    KataGoQuery query = new(Guid.NewGuid().ToString(), moveHistory, boardSize, komi, strength);
     KataGoResponse response = await kataGoClient.QueryAsync(query, cancellationToken);
-    var (move, winrate) = KataGoResponseInterpreter.Interpret(response, botStrength, random);
+    var (move, winrate) = KataGoResponseInterpreter.Interpret(response, strength, random);
     return new SuggestionResponse(move, winrate);
   }
 }
