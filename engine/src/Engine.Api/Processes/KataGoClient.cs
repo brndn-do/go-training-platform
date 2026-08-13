@@ -44,6 +44,28 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
     _workerTask = Task.Run(() => ProcessQueueAsync(_shutdownCts.Token));
   }
 
+  /// <inheritdoc/>
+  public async Task<KataGoResponse> QueryAsync(KataGoQuery query, CancellationToken cancellationToken = default)
+  {
+    var item = new WorkItem(query);
+
+    // register a cancellation callback: if caller's token is cancelled,
+    // call TrySetCancelled() on the TCS
+    await using var registration = cancellationToken.Register(
+      static state => ((TaskCompletionSource<KataGoResponse>)state!).TrySetCanceled(),
+      item.CompletionSource);
+
+    await _channel.Writer.WriteAsync(item, cancellationToken); // queue the item
+
+    return await item.CompletionSource.Task; // wait for the background worker loop to resolve
+  }
+
+  /// <inheritdoc/>
+  public async Task WarmUpAsync(CancellationToken cancellationToken = default)
+  {
+    await _processIO.WarmUpAsync(cancellationToken);
+  }
+
   /// <summary>
   /// Stops accepting new queries and shuts down the background worker: queued and in-flight
   /// work is given up to the configured grace period to finish naturally, after which any
@@ -77,22 +99,6 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
     }
 
     _shutdownCts.Dispose();
-  }
-
-  /// <inheritdoc/>
-  public async Task<KataGoResponse> QueryAsync(KataGoQuery query, CancellationToken cancellationToken = default)
-  {
-    var item = new WorkItem(query);
-
-    // register a cancellation callback: if caller's token is cancelled,
-    // call TrySetCancelled() on the TCS
-    await using var registration = cancellationToken.Register(
-      static state => ((TaskCompletionSource<KataGoResponse>)state!).TrySetCanceled(),
-      item.CompletionSource);
-
-    await _channel.Writer.WriteAsync(item, cancellationToken); // queue the item
-
-    return await item.CompletionSource.Task; // wait for the background worker loop to resolve
   }
 
   private async Task ProcessQueueAsync(CancellationToken shutdownToken)

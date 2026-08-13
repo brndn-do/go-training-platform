@@ -98,7 +98,7 @@ public sealed class KataGoClientTests
     callerCts.Cancel();
 
     // the caller gives up immediately, without waiting for the real exchange to finish
-    await Assert.ThrowsAsync<TaskCanceledException>(() => task1);
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task1);
 
     // query2 must not be dispatched early just because query1's caller gave up
     Assert.Single(fakeIO.RequestsReceived);
@@ -152,7 +152,7 @@ public sealed class KataGoClientTests
     // response 1 arrives
     responseTcs1.TrySetResult("""{"id":"test1","rootInfo":{"winrate":0.5}}""");
 
-    await Assert.ThrowsAsync<TaskCanceledException>(() => task2);
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task2);
 
     // wait until worker has dequeued
     await WaitForConditionAsync(
@@ -211,6 +211,103 @@ public sealed class KataGoClientTests
     Assert.Equal("test", response.Id);
     Assert.True(response.IsError);
     Assert.Equal("KataGo process returned null.", response.Error);
+  }
+
+  [Fact]
+  public async Task WarmUpAsync_SingleCall_WaitsForProcess()
+  {
+    TaskCompletionSource warmUpTcs = new();
+    FakeKataGoProcessIO fakeIO = new([], warmUpTcs);
+    KataGoClient client = new(fakeIO);
+
+    var warmUpTask = client.WarmUpAsync();
+
+    Assert.Equal(1, fakeIO.WarmUpCallCount);
+    Assert.False(warmUpTask.IsCompleted);
+
+    warmUpTcs.TrySetResult();
+    await warmUpTask;
+
+    Assert.True(warmUpTask.IsCompleted);
+  }
+
+  [Fact]
+  public async Task WarmUpAsync_AlreadyWarm_ReturnsImmediately()
+  {
+    TaskCompletionSource warmUpTcs = new();
+    FakeKataGoProcessIO fakeIO = new([], warmUpTcs);
+    KataGoClient client = new(fakeIO);
+
+    warmUpTcs.TrySetResult();
+
+    var warmUpTask = client.WarmUpAsync();
+
+    Assert.True(warmUpTask.IsCompleted);
+
+    await warmUpTask;
+  }
+
+  [Fact]
+  public async Task WarmUpAsync_TwoCallsWithOneCancelled_DoesNotAffectOtherCall()
+  {
+    TaskCompletionSource warmUpTcs = new();
+    FakeKataGoProcessIO fakeIO = new([], warmUpTcs);
+    KataGoClient client = new(fakeIO);
+
+    CancellationTokenSource cts = new();
+    var warmUpTask1 = client.WarmUpAsync(cts.Token);
+    var warmUpTask2 = client.WarmUpAsync();
+
+    // cancel call 1 before process is warm
+    cts.Cancel();
+
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(() => warmUpTask1);
+
+    warmUpTcs.TrySetResult();
+    await warmUpTask2;
+
+    Assert.True(warmUpTask2.IsCompleted);
+  }
+
+  [Fact]
+  public async Task WarmUpAsync_ConcurrentQueryCalls_DoesNotGetBlocked()
+  {
+    TaskCompletionSource warmUpTcs = new();
+    TaskCompletionSource<string?> responseTcs = new();
+    FakeKataGoProcessIO fakeIO = new([responseTcs], warmUpTcs);
+    KataGoClient client = new(fakeIO);
+
+    var queryTask = client.QueryAsync(new("test1", [], 9, 7.5, new BotStrength("Superhuman")));
+    var warmUpTask = client.WarmUpAsync();
+
+    Assert.False(queryTask.IsCompleted);
+    Assert.False(warmUpTask.IsCompleted);
+
+    warmUpTcs.TrySetResult();
+    await warmUpTask;
+    Assert.True(warmUpTask.IsCompleted);
+    Assert.False(queryTask.IsCompleted);
+
+    responseTcs.TrySetResult("""{"id":"test1","rootInfo":{"winrate":0.5}}""");
+    await queryTask;
+  }
+
+  [Fact]
+  public async Task WarmUpAsync_ExceptionForProcess_Propagates()
+  {
+    TaskCompletionSource warmUpTcs = new();
+    FakeKataGoProcessIO fakeIO = new([], warmUpTcs);
+    KataGoClient client = new(fakeIO);
+
+    var warmUpTask = client.WarmUpAsync();
+
+    Assert.False(warmUpTask.IsCompleted);
+
+    Exception thrown = new("test");
+    warmUpTcs.TrySetException(thrown);
+
+    Exception caught = await Assert.ThrowsAsync<Exception>(() => warmUpTask);
+    Assert.Same(thrown, caught);
   }
 
   // Note: very likely safe, but increase shutdownGracePeriodMs to be more generous
@@ -272,7 +369,7 @@ public sealed class KataGoClientTests
     // release responseTcs after grace period
     responseTcs.TrySetResult("""{"id":"test","rootInfo":{"winrate":0.5}}""");
 
-    await Assert.ThrowsAsync<TaskCanceledException>(() => task);
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
   }
 
   // polls condition every 1ms until it's true, failing with timeoutMessage if it never becomes

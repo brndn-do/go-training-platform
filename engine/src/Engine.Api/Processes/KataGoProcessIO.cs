@@ -36,6 +36,12 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
     return response;
   }
 
+  /// <inheritdoc/>
+  public async Task WarmUpAsync(CancellationToken cancellationToken = default)
+  {
+    throw new NotImplementedException();
+  }
+
   /// <summary>
   /// Kills the KataGo process and releases its resources.
   /// </summary>
