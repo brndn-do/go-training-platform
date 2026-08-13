@@ -8,9 +8,17 @@ namespace Engine.Api.Processes;
 /// </summary>
 public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
 {
+  private const string ReadyMessage = "Started, ready to begin handling requests";
+
   private readonly Process _process;
 
   private readonly TimeSpan _shutdownGracePeriod;
+
+  private readonly TaskCompletionSource _warmUpTcs;
+
+  private readonly CancellationTokenSource _processExitedCts;
+
+  private bool _disposed;
 
   /// <summary>
   /// Initializes a new instance of the <see cref="KataGoProcessIO"/> class, starting the
@@ -23,7 +31,32 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
   {
     var psi = GetProcessStartInfo(options.Value);
     _process = Process.Start(psi)!;
-    _shutdownGracePeriod = TimeSpan.FromMilliseconds(shutdownGracePeriodMs);
+    _process.EnableRaisingEvents = true;
+    _processExitedCts = new();
+
+    _process.Exited += (_, e) => _processExitedCts.Cancel();
+
+    try
+    {
+      _shutdownGracePeriod = TimeSpan.FromMilliseconds(shutdownGracePeriodMs);
+      _warmUpTcs = new();
+
+      // listen for ready message
+      _process.ErrorDataReceived += (_, e) =>
+      {
+        if (e.Data != null && e.Data.Contains(ReadyMessage))
+        {
+          _warmUpTcs.TrySetResult();
+        }
+      };
+
+      _process.BeginErrorReadLine();
+    }
+    catch
+    {
+      _process.Kill(entireProcessTree: true);
+      throw;
+    }
   }
 
   /// <inheritdoc/>
@@ -39,7 +72,14 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
   /// <inheritdoc/>
   public async Task WarmUpAsync(CancellationToken cancellationToken = default)
   {
-    throw new NotImplementedException();
+    try
+    {
+      await _warmUpTcs.Task.WaitAsync(cancellationToken).WaitAsync(_processExitedCts.Token);
+    }
+    catch (OperationCanceledException ex) when (ex.CancellationToken == _processExitedCts.Token)
+    {
+      throw new InvalidOperationException("The process has exited.");
+    }
   }
 
   /// <summary>
@@ -50,36 +90,40 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
   /// </returns>
   public async ValueTask DisposeAsync()
   {
-    if (_process.HasExited)
+    if (_disposed)
     {
-      _process.Dispose();
       return;
-    }
-
-    try
-    {
-      _process.StandardInput.Close();
-    }
-    catch
-    {
-    }
-
-    using var cts = new CancellationTokenSource(_shutdownGracePeriod);
-    try
-    {
-      await _process.WaitForExitAsync(cts.Token);
-    }
-    catch (OperationCanceledException)
-    {
     }
 
     if (!_process.HasExited)
     {
-      _process.Kill(entireProcessTree: true);
-      await _process.WaitForExitAsync();
+      try
+      {
+        _process.StandardInput.Close();
+      }
+      catch
+      {
+      }
+
+      using var cts = new CancellationTokenSource(_shutdownGracePeriod);
+      try
+      {
+        await _process.WaitForExitAsync(cts.Token);
+      }
+      catch (OperationCanceledException)
+      {
+      }
+
+      if (!_process.HasExited) // still has not exited
+      {
+        _process.Kill(entireProcessTree: true);
+        await _process.WaitForExitAsync();
+      }
     }
 
     _process.Dispose();
+    _processExitedCts.Dispose();
+    _disposed = true;
   }
 
   private static ProcessStartInfo GetProcessStartInfo(KataGoProcessOptions options)
@@ -89,6 +133,7 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
       FileName = options.BinaryPath,
       RedirectStandardOutput = true,
       RedirectStandardInput = true,
+      RedirectStandardError = true,
       UseShellExecute = false,
     };
 
