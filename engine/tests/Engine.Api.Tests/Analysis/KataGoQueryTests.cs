@@ -65,13 +65,16 @@ public sealed class KataGoQueryTests()
     Assert.False(overrideSettings.TryGetProperty("botStrength", out _));
   }
 
+  // The real KataGo analysis engine rejects an explicit "overrideSettings":null with
+  // {"error":"Must be an object","field":"overrideSettings",...} — the key must be omitted
+  // entirely, not present with a null value.
   [Fact]
-  public void Serialize_SuperhumanQuery_OverrideSettingsIsNull()
+  public void Serialize_SuperhumanQuery_OmitsOverrideSettings()
   {
     var query = new KataGoQuery("test", [], 19, 7.5, new BotStrength("Superhuman"));
 
     JsonDocument doc = JsonDocument.Parse(JsonSerializer.Serialize(query, _options));
 
-    Assert.Equal(JsonValueKind.Null, doc.RootElement.GetProperty("overrideSettings").ValueKind);
+    Assert.False(doc.RootElement.TryGetProperty("overrideSettings", out _));
   }
 }

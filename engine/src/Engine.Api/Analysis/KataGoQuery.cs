@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using static Engine.Api.Extensions.DoubleExtensions;
 
 namespace Engine.Api.Analysis;
@@ -90,7 +91,10 @@ public sealed record KataGoQuery
   public bool IncludePolicy { get; }
 
   /// <summary>
-  /// Gets the override settings, or <c>null</c> for Superhuman strength.
+  /// Gets the override settings, or <c>null</c> for Superhuman strength. Omitted from the
+  /// serialized JSON when <c>null</c> — KataGo's analysis engine rejects an explicit
+  /// <c>"overrideSettings":null</c>.
   /// </summary>
+  [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
   public KataGoOverrideSettings? OverrideSettings { get; }
 }
