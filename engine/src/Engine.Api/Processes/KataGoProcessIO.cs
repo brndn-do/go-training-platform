@@ -54,6 +54,8 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
     }
     catch
     {
+      // if anything fails after the KataGo binary has started, kill it manually
+      // remember garbage collection doesn't handle this
       _process.Kill(entireProcessTree: true);
       throw;
     }
