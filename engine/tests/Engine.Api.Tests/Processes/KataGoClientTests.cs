@@ -9,12 +9,10 @@ public sealed class KataGoClientTests
   [Fact]
   public async Task QueryAsync_SingleQuery_ReturnsDeserializedResponse()
   {
-    string?[] responses = ["""{"id":"test","rootInfo":{"winrate":0.5}}"""];
+    TaskCompletionSource<string?> responseTcs = new();
+    responseTcs.TrySetResult("""{"id":"test","rootInfo":{"winrate":0.5}}""");
 
-    TaskCompletionSource<string?> gate = new();
-    gate.TrySetResult(null);
-
-    FakeKataGoProcessIO fakeIO = new(responses, [gate]);
+    FakeKataGoProcessIO fakeIO = new([responseTcs]);
     KataGoClient client = new(fakeIO);
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
@@ -30,12 +28,10 @@ public sealed class KataGoClientTests
   [Fact]
   public async Task QueryAsync_SingleQuery_SendsCamelCaseRequest()
   {
-    string?[] responses = ["""{"id":"test","rootInfo":{"winrate":0.5}}"""];
+    TaskCompletionSource<string?> responseTcs = new();
+    responseTcs.TrySetResult("""{"id":"test","rootInfo":{"winrate":0.5}}""");
 
-    TaskCompletionSource<string?> gate = new();
-    gate.TrySetResult(null);
-
-    FakeKataGoProcessIO fakeIO = new(responses, [gate]);
+    FakeKataGoProcessIO fakeIO = new([responseTcs]);
     KataGoClient client = new(fakeIO);
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
@@ -53,13 +49,10 @@ public sealed class KataGoClientTests
   [Fact]
   public async Task QueryAsync_ConcurrentQueries_SendsOneAtATime()
   {
-    string?[] responses = ["""{"id":"test1","rootInfo":{"winrate":0.5}}""",
-      """{"id":"test2","rootInfo":{"winrate":0.5}}"""];
+    TaskCompletionSource<string?> responseTcs1 = new();
+    TaskCompletionSource<string?> responseTcs2 = new();
 
-    TaskCompletionSource<string?> gate1 = new();
-    TaskCompletionSource<string?> gate2 = new();
-
-    FakeKataGoProcessIO fakeIO = new(responses, [gate1, gate2]);
+    FakeKataGoProcessIO fakeIO = new([responseTcs1, responseTcs2]);
     KataGoClient client = new(fakeIO);
 
     KataGoQuery query1 = new("test1", [], 9, 7.5, new BotStrength("Superhuman"));
@@ -72,8 +65,8 @@ public sealed class KataGoClientTests
       () => fakeIO.RequestsReceived.Length >= 1,
       "Timed out waiting for the first request.");
 
-    gate1.TrySetResult(null);
-    gate2.TrySetResult(null);
+    responseTcs1.TrySetResult("""{"id":"test1","rootInfo":{"winrate":0.5}}""");
+    responseTcs2.TrySetResult("""{"id":"test2","rootInfo":{"winrate":0.5}}""");
 
     await Task.WhenAll(task1, task2);
 
@@ -83,13 +76,10 @@ public sealed class KataGoClientTests
   [Fact]
   public async Task QueryAsync_CancelledMidExchange_DoesNotCorruptNextCallersResponse()
   {
-    string?[] responses = ["""{"id":"test1","rootInfo":{"winrate":0.5}}""",
-      """{"id":"test2","rootInfo":{"winrate":0.6}}"""];
+    TaskCompletionSource<string?> responseTcs1 = new();
+    TaskCompletionSource<string?> responseTcs2 = new();
 
-    TaskCompletionSource<string?> gate1 = new();
-    TaskCompletionSource<string?> gate2 = new();
-
-    FakeKataGoProcessIO fakeIO = new(responses, [gate1, gate2]);
+    FakeKataGoProcessIO fakeIO = new([responseTcs1, responseTcs2]);
     KataGoClient client = new(fakeIO);
 
     KataGoQuery query1 = new("test1", [], 9, 7.5, new BotStrength("Superhuman"));
@@ -100,7 +90,7 @@ public sealed class KataGoClientTests
     var task1 = client.QueryAsync(query1, callerCts.Token);
     var task2 = client.QueryAsync(query2);
 
-    // wait until the worker has dequeued query1 and is blocked on gate1
+    // wait until the worker has dequeued query1 and is blocked on responseTcs1
     await WaitForConditionAsync(
       () => fakeIO.RequestsReceived.Length >= 1,
       "Timed out waiting for the first request.");
@@ -114,14 +104,14 @@ public sealed class KataGoClientTests
     Assert.Single(fakeIO.RequestsReceived);
 
     // the real "KataGo response" for query1 finally arrives, even though nobody's listening
-    gate1.TrySetResult(null);
+    responseTcs1.TrySetResult("""{"id":"test1","rootInfo":{"winrate":0.5}}""");
 
-    // wait until the worker has dequeued query2 and is blocked on gate2
+    // wait until the worker has dequeued query2 and is blocked on responseTcs2
     await WaitForConditionAsync(
       () => fakeIO.RequestsReceived.Length >= 2,
       "Timed out waiting for the second request.");
 
-    gate2.TrySetResult(null);
+    responseTcs2.TrySetResult("""{"id":"test2","rootInfo":{"winrate":0.6}}""");
 
     KataGoResponse response2 = await task2;
 
@@ -133,13 +123,10 @@ public sealed class KataGoClientTests
   [Fact]
   public async Task QueryAsync_CancelledBeforeExchange_DoesNotProcessQuery()
   {
-    string?[] responses = ["""{"id":"test1","rootInfo":{"winrate":0.5}}""",
-      """{"id":"test3","rootInfo":{"winrate":0.7}}"""];
+    TaskCompletionSource<string?> responseTcs1 = new();
+    TaskCompletionSource<string?> responseTcs3 = new();
 
-    TaskCompletionSource<string?> gate1 = new();
-    TaskCompletionSource<string?> gate3 = new();
-
-    FakeKataGoProcessIO fakeIO = new(responses, [gate1, gate3]);
+    FakeKataGoProcessIO fakeIO = new([responseTcs1, responseTcs3]);
     KataGoClient client = new(fakeIO);
 
     KataGoQuery query1 = new("test1", [], 9, 7.5, new BotStrength("Superhuman"));
@@ -152,7 +139,7 @@ public sealed class KataGoClientTests
     var task2 = client.QueryAsync(query2, callerCts.Token);
     var task3 = client.QueryAsync(query3);
 
-    // wait until the worker has dequeued query1 and is blocked on gate1
+    // wait until the worker has dequeued query1 and is blocked on responseTcs1
     await WaitForConditionAsync(
       () => fakeIO.RequestsReceived.Length >= 1,
       "Timed out waiting for the first request.");
@@ -163,7 +150,7 @@ public sealed class KataGoClientTests
     callerCts.Cancel();
 
     // response 1 arrives
-    gate1.TrySetResult(null);
+    responseTcs1.TrySetResult("""{"id":"test1","rootInfo":{"winrate":0.5}}""");
 
     await Assert.ThrowsAsync<TaskCanceledException>(() => task2);
 
@@ -177,7 +164,7 @@ public sealed class KataGoClientTests
     Assert.Equal(2, fakeIO.RequestsReceived.Length);
 
     // response for request 3 arrives
-    gate3.TrySetResult(null);
+    responseTcs3.TrySetResult("""{"id":"test3","rootInfo":{"winrate":0.7}}""");
 
     KataGoResponse response1 = await task1;
     KataGoResponse response3 = await task3;
@@ -193,12 +180,10 @@ public sealed class KataGoClientTests
   [Fact]
   public async Task QueryAsync_ProcessIODoesNotRespond_ReturnsErrorResponse()
   {
-    string?[] responses = [null];
+    TaskCompletionSource<string?> responseTcs = new();
+    responseTcs.TrySetResult(null);
 
-    TaskCompletionSource<string?> gate = new();
-    gate.TrySetResult(null);
-
-    FakeKataGoProcessIO fakeIO = new(responses, [gate]);
+    FakeKataGoProcessIO fakeIO = new([responseTcs]);
     KataGoClient client = new(fakeIO);
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
@@ -213,12 +198,10 @@ public sealed class KataGoClientTests
   [Fact]
   public async Task QueryAsync_ProcessIOReturnsNullLiteral_ReturnsErrorResponse()
   {
-    string?[] responses = ["null"];
+    TaskCompletionSource<string?> responseTcs = new();
+    responseTcs.TrySetResult("null");
 
-    TaskCompletionSource<string?> gate = new();
-    gate.TrySetResult(null);
-
-    FakeKataGoProcessIO fakeIO = new(responses, [gate]);
+    FakeKataGoProcessIO fakeIO = new([responseTcs]);
     KataGoClient client = new(fakeIO);
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
@@ -237,11 +220,9 @@ public sealed class KataGoClientTests
   {
     int shutdownGracePeriodMs = 100;
 
-    string?[] responses = ["""{"id":"test","rootInfo":{"winrate":0.5}}"""];
+    TaskCompletionSource<string?> responseTcs = new();
 
-    TaskCompletionSource<string?> gate = new();
-
-    FakeKataGoProcessIO fakeIO = new(responses, [gate]);
+    FakeKataGoProcessIO fakeIO = new([responseTcs]);
     KataGoClient client = new(fakeIO, shutdownGracePeriodMs);
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
@@ -256,8 +237,8 @@ public sealed class KataGoClientTests
     // shutdown while waiting for ProcessIO response, no await
     Task disposeTask = client.DisposeAsync().AsTask();
 
-    // immediately release gate during grace period
-    gate.TrySetResult(null);
+    // immediately release responseTcs during grace period
+    responseTcs.TrySetResult("""{"id":"test","rootInfo":{"winrate":0.5}}""");
 
     await disposeTask;
 
@@ -271,11 +252,9 @@ public sealed class KataGoClientTests
   {
     int shutdownGracePeriodMs = 100;
 
-    string?[] responses = ["""{"id":"test","rootInfo":{"winrate":0.5}}"""];
+    TaskCompletionSource<string?> responseTcs = new();
 
-    TaskCompletionSource<string?> gate = new();
-
-    FakeKataGoProcessIO fakeIO = new(responses, [gate]);
+    FakeKataGoProcessIO fakeIO = new([responseTcs]);
     KataGoClient client = new(fakeIO, shutdownGracePeriodMs);
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
@@ -290,8 +269,8 @@ public sealed class KataGoClientTests
     // shutdown, wait until it's complete (grace period has passed)
     await client.DisposeAsync();
 
-    // release gate after grace period
-    gate.TrySetResult(null);
+    // release responseTcs after grace period
+    responseTcs.TrySetResult("""{"id":"test","rootInfo":{"winrate":0.5}}""");
 
     await Assert.ThrowsAsync<TaskCanceledException>(() => task);
   }
