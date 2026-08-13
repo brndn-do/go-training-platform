@@ -2,16 +2,26 @@ using Engine.Api.Processes;
 
 namespace Engine.Api.Tests.Fakes;
 
-public sealed class FakeKataGoProcessIO(string?[] responses, TaskCompletionSource<string?>[] gates) : IKataGoProcessIO
+public sealed class FakeKataGoProcessIO(string?[] responses, TaskCompletionSource<string?>[] gates, TaskCompletionSource? warmUpTcs = null) : IKataGoProcessIO
 {
-  private int _callCount;
+  private readonly TaskCompletionSource _warmUpTcs = warmUpTcs ?? new();
+
+  private int _exchangeCallCount;
 
   public string?[] RequestsReceived { get; private set; } = [];
+
+  public int WarmUpCallCount { get; private set; }
 
   public async Task<string?> ExchangeAsync(string request, CancellationToken cancellationToken = default)
   {
     RequestsReceived = [.. RequestsReceived.Append(request)];
-    await gates[_callCount].Task.WaitAsync(cancellationToken);
-    return responses[_callCount++];
+    await gates[_exchangeCallCount].Task.WaitAsync(cancellationToken);
+    return responses[_exchangeCallCount++];
+  }
+
+  public async Task WarmUpAsync(CancellationToken cancellationToken = default)
+  {
+    WarmUpCallCount++;
+    await _warmUpTcs.Task.WaitAsync(cancellationToken);
   }
 }

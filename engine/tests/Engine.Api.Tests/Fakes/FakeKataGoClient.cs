@@ -11,4 +11,6 @@ public sealed class FakeKataGoClient(KataGoResponse responseToReturn) : IKataGoC
     QueryReceived = query;
     return Task.FromResult(responseToReturn);
   }
+
+  public Task WarmUpAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
