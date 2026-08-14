@@ -17,6 +17,8 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
   };
 
+  private readonly TimeSpan _livenessThreshold;
+
   private readonly TimeSpan _shutdownGracePeriod;
 
   private readonly IKataGoProcessIO _processIO;
@@ -27,7 +29,12 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
     new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
 
   private readonly CancellationTokenSource _shutdownCts = new();
+
   private readonly Task _workerTask;
+
+  // the time the current query has been sent to be processed via KataGoProcessIO.ExchangeAsync.
+  // 0 means no queries are currently being processed.
+  private long _queryStartedAtTicks;
 
   /// <summary>
   /// Initializes a new instance of the <see cref="KataGoClient"/> class, starting its
@@ -36,10 +43,12 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
   /// <param name="processIO">The process I/O to exchange queries and responses through.</param>
   /// <param name="options">
   /// How long <see cref="DisposeAsync"/> waits for in-flight work to finish on its own before
-  /// forcefully cancelling it.
+  /// forcefully cancelling it, and how long a single query may stay in flight before
+  /// <see cref="IsLive"/> considers the process stuck.
   /// </param>
   public KataGoClient(IKataGoProcessIO processIO, IOptions<KataGoClientOptions> options)
   {
+    _livenessThreshold = TimeSpan.FromMilliseconds(options.Value.ClientLivenessThresholdMs);
     _shutdownGracePeriod = TimeSpan.FromMilliseconds(options.Value.ClientShutdownGracePeriodMs);
     _processIO = processIO;
     _workerTask = Task.Run(() => ProcessQueueAsync(_shutdownCts.Token));
@@ -47,6 +56,30 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
 
   /// <inheritdoc/>
   public bool IsReady => _processIO.IsReady;
+
+  /// <inheritdoc/>
+  public bool IsLive
+  {
+    get
+    {
+      if (!_processIO.IsReady)
+      {
+        // The process is considered "live" even if it's just getting ready. A query can still
+        // be sent before KataGo is ready to receive requests, in which case we expect the response
+        // to take a long time. We don't want to say the KataGo process is stuck in this case.
+        return true;
+      }
+
+      long startedAt = Interlocked.Read(ref _queryStartedAtTicks);
+      if (startedAt == 0)
+      {
+        // No queries are being processed, thus nothing is stuck as far as we know.
+        return true;
+      }
+
+      return Environment.TickCount64 - startedAt < _livenessThreshold.TotalMilliseconds;
+    }
+  }
 
   /// <inheritdoc/>
   public async Task<KataGoResponse> QueryAsync(KataGoQuery query, CancellationToken cancellationToken = default)
@@ -114,6 +147,8 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
         continue; // already cancelled
       }
 
+      // set _queryStartedAtTicks to the current tick count before sending it to be processed.
+      Interlocked.Exchange(ref _queryStartedAtTicks, Environment.TickCount64);
       try
       {
         KataGoResponse response = await ProcessQuery(item.Query, shutdownToken);
@@ -122,6 +157,11 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
       catch (Exception ex)
       {
         item.CompletionSource.TrySetException(ex);
+      }
+      finally
+      {
+        // query is not being processed anymore, reset to 0 as sentinel
+        Interlocked.Exchange(ref _queryStartedAtTicks, 0);
       }
     }
   }

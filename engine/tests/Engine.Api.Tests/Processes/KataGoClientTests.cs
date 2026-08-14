@@ -244,8 +244,7 @@ public sealed class KataGoClientTests
     var warmUpTask = client.WarmUpAsync();
 
     Assert.True(warmUpTask.IsCompleted);
-
-    await warmUpTask;
+    await warmUpTask; // task should succeed
   }
 
   [Fact]
@@ -288,9 +287,6 @@ public sealed class KataGoClientTests
     await warmUpTask;
     Assert.True(warmUpTask.IsCompleted);
     Assert.False(queryTask.IsCompleted);
-
-    responseTcs.TrySetResult("""{"id":"test1","rootInfo":{"winrate":0.5}}""");
-    await queryTask;
   }
 
   [Fact]
@@ -321,7 +317,7 @@ public sealed class KataGoClientTests
     TaskCompletionSource<string?> responseTcs = new();
 
     FakeKataGoProcessIO fakeIO = new([responseTcs]);
-    KataGoClient client = new(fakeIO, DefaultOptions(shutdownGracePeriodMs));
+    KataGoClient client = new(fakeIO, DefaultOptions(shutdownGracePeriodMs: shutdownGracePeriodMs));
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
     var task = client.QueryAsync(query);
@@ -353,7 +349,7 @@ public sealed class KataGoClientTests
     TaskCompletionSource<string?> responseTcs = new();
 
     FakeKataGoProcessIO fakeIO = new([responseTcs]);
-    KataGoClient client = new(fakeIO, DefaultOptions(shutdownGracePeriodMs));
+    KataGoClient client = new(fakeIO, DefaultOptions(shutdownGracePeriodMs: shutdownGracePeriodMs));
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
     var task = client.QueryAsync(query);
@@ -373,8 +369,83 @@ public sealed class KataGoClientTests
     await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
   }
 
-  private static IOptions<KataGoClientOptions> DefaultOptions(int shutdownGracePeriodMs = 5000) =>
-    Options.Create(new KataGoClientOptions { ClientShutdownGracePeriodMs = shutdownGracePeriodMs });
+  [Fact]
+  public async Task IsLive_ProcessNotReady_ReturnsTrueRegardlessOfQueryDuration()
+  {
+    TaskCompletionSource<string?> responseTcs = new();
+    TaskCompletionSource processReadyTcs = new();
+    FakeKataGoProcessIO processIO = new([responseTcs], processReadyTcs);
+    KataGoClient client = new(processIO, DefaultOptions(clientLivenessThresholdMs: 100));
+
+    KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
+    _ = client.QueryAsync(query);
+
+    // wait until we pass the threshold
+    await Task.Delay(100 * 2);
+
+    // even though our query is taking long,
+    // the process is not ready, so should be considered live
+    Assert.False(client.IsReady);
+    Assert.True(client.IsLive);
+  }
+
+  [Fact]
+  public async Task IsLive_NoQueryBeingProcessed_ReturnsTrue()
+  {
+    TaskCompletionSource processReadyTcs = new();
+    FakeKataGoProcessIO processIO = new([], processReadyTcs);
+    KataGoClient client = new(processIO, DefaultOptions());
+
+    processReadyTcs.TrySetResult(); // process ready
+
+    Assert.True(client.IsReady);
+    Assert.True(client.IsLive);
+  }
+
+  [Fact]
+  public async Task IsLive_QueryBeingProcessedExceedsThreshold_ReturnsFalse()
+  {
+    TaskCompletionSource<string?> responseTcs = new();
+    TaskCompletionSource processReadyTcs = new();
+    FakeKataGoProcessIO processIO = new([responseTcs], processReadyTcs);
+    KataGoClient client = new(processIO, DefaultOptions(clientLivenessThresholdMs: 100));
+
+    processReadyTcs.TrySetResult();
+
+    KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
+    _ = client.QueryAsync(query);
+
+    // wait until we pass the threshold
+    await Task.Delay(100 * 2);
+
+    Assert.False(client.IsLive);
+  }
+
+  [Fact]
+  public async Task IsLive_AfterQueryCompletesInTime_ReturnsTrue()
+  {
+    TaskCompletionSource<string?> responseTcs = new();
+    TaskCompletionSource processReadyTcs = new();
+    FakeKataGoProcessIO processIO = new([responseTcs], processReadyTcs);
+    KataGoClient client = new(processIO, DefaultOptions(clientLivenessThresholdMs: 100));
+
+    processReadyTcs.TrySetResult();
+
+    KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
+    responseTcs.TrySetResult("""{"id":"test","rootInfo":{"winrate":0.5}}""");
+    await client.QueryAsync(query);
+
+    // query should have completed immediately
+    // wait until we pass the threshold, then check for liveness.
+    // shows that queries shouldn't make isLive false
+    // after the threshold as long as they complete before the threshold.
+    await Task.Delay(100 * 2);
+
+    Assert.True(client.IsLive);
+  }
+
+  private static IOptions<KataGoClientOptions> DefaultOptions(int clientLivenessThresholdMs = 10000, int shutdownGracePeriodMs = 5000) =>
+    Options.Create(new KataGoClientOptions { ClientLivenessThresholdMs = clientLivenessThresholdMs, ClientShutdownGracePeriodMs = shutdownGracePeriodMs });
 
   // polls condition every 1ms until it's true, failing with timeoutMessage if it never becomes
   // true within 5 seconds

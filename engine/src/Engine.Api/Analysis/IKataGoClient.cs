@@ -7,10 +7,17 @@ public interface IKataGoClient
 {
   /// <summary>
   /// Gets a value indicating whether the KataGo process has finished loading and is ready to
-  /// serve queries. A non-blocking snapshot check, unlike <see cref="WarmUpAsync"/> — never
-  /// throws, including after disposal.
+  /// serve queries.
   /// </summary>
   bool IsReady { get; }
+
+  /// <summary>
+  /// Gets a value indicating whether the KataGo process appears responsive — <c>false</c> only
+  /// when a single query has been in flight longer than the configured liveness threshold.
+  /// Always <c>true</c> while the process is still starting up (see <see cref="IsReady"/>), since
+  /// a slow response during startup isn't a sign of a stuck process.
+  /// </summary>
+  bool IsLive { get; }
 
   /// <summary>
   /// Queries the KataGo process for analysis.
