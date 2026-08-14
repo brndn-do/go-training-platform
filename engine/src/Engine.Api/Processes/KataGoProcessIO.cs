@@ -121,8 +121,9 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
       {
       }
 
-      if (!_process.HasExited) // still has not exited
+      if (!_process.HasExited)
       {
+        // still has not exited
         _process.Kill(entireProcessTree: true);
         await _process.WaitForExitAsync();
       }

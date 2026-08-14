@@ -5,7 +5,7 @@ using Engine.Api.Processes;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<KataGoProcessOptions>(
-  builder.Configuration.GetSection("KataGo"));
+  builder.Configuration.GetSection("KataGoProcess"));
 builder.Services.Configure<KataGoClientOptions>(
   builder.Configuration.GetSection("KataGoClient"));
 
