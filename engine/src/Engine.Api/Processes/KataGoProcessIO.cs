@@ -14,7 +14,7 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
 
   private readonly TimeSpan _shutdownGracePeriod;
 
-  private readonly TaskCompletionSource _warmUpTcs;
+  private readonly TaskCompletionSource _processReadyTcs;
 
   private readonly CancellationTokenSource _processExitedCts;
 
@@ -39,14 +39,14 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
     try
     {
       _shutdownGracePeriod = TimeSpan.FromMilliseconds(shutdownGracePeriodMs);
-      _warmUpTcs = new();
+      _processReadyTcs = new();
 
       // listen for ready message
       _process.ErrorDataReceived += (_, e) =>
       {
         if (e.Data != null && e.Data.Contains(ReadyMessage))
         {
-          _warmUpTcs.TrySetResult();
+          _processReadyTcs.TrySetResult();
         }
       };
 
@@ -60,6 +60,9 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
       throw;
     }
   }
+
+  /// <inheritdoc/>
+  public bool IsReady => _processReadyTcs.Task.IsCompletedSuccessfully;
 
   /// <inheritdoc/>
   public async Task<string?> ExchangeAsync(string request, CancellationToken cancellationToken = default)
@@ -78,7 +81,7 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
 
     try
     {
-      await _warmUpTcs.Task.WaitAsync(cancellationToken).WaitAsync(_processExitedCts.Token);
+      await _processReadyTcs.Task.WaitAsync(cancellationToken).WaitAsync(_processExitedCts.Token);
     }
     catch (OperationCanceledException ex) when (ex.CancellationToken == _processExitedCts.Token)
     {

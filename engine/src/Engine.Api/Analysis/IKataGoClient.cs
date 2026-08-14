@@ -6,6 +6,13 @@ namespace Engine.Api.Analysis;
 public interface IKataGoClient
 {
   /// <summary>
+  /// Gets a value indicating whether the KataGo process has finished loading and is ready to
+  /// serve queries. A non-blocking snapshot check, unlike <see cref="WarmUpAsync"/> — never
+  /// throws, including after disposal.
+  /// </summary>
+  bool IsReady { get; }
+
+  /// <summary>
   /// Queries the KataGo process for analysis.
   /// </summary>
   /// <param name="query">The query to analyze.</param>

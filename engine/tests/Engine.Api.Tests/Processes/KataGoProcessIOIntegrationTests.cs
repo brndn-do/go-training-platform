@@ -131,6 +131,37 @@ public sealed class KataGoProcessIOIntegrationTests
   }
 
   [Fact]
+  public async Task IsReady_FreshProcess_ReturnsFalse()
+  {
+    var processOptions = GetOptions();
+    await using var processIO = new KataGoProcessIO(processOptions);
+
+    Assert.False(processIO.IsReady);
+  }
+
+  [Fact]
+  public async Task IsReady_AfterWarmUp_ReturnsTrue()
+  {
+    var processOptions = GetOptions();
+    await using var processIO = new KataGoProcessIO(processOptions);
+
+    await processIO.WarmUpAsync().WaitAsync(_timeout);
+
+    Assert.True(processIO.IsReady);
+  }
+
+  [Fact]
+  public async Task IsReady_CalledOnDisposedInstance_DoesNotThrow()
+  {
+    var processOptions = GetOptions();
+    var processIO = new KataGoProcessIO(processOptions);
+
+    await processIO.DisposeAsync().AsTask().WaitAsync(_timeout);
+
+    Assert.False(processIO.IsReady);
+  }
+
+  [Fact]
   public async Task DisposeAsync_AlreadyDisposed_Succeeds()
   {
     var processOptions = GetOptions();

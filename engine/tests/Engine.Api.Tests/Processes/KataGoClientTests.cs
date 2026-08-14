@@ -216,8 +216,8 @@ public sealed class KataGoClientTests
   [Fact]
   public async Task WarmUpAsync_SingleCall_WaitsForProcess()
   {
-    TaskCompletionSource warmUpTcs = new();
-    FakeKataGoProcessIO fakeIO = new([], warmUpTcs);
+    TaskCompletionSource processReadyTcs = new();
+    FakeKataGoProcessIO fakeIO = new([], processReadyTcs);
     KataGoClient client = new(fakeIO);
 
     var warmUpTask = client.WarmUpAsync();
@@ -225,7 +225,7 @@ public sealed class KataGoClientTests
     Assert.Equal(1, fakeIO.WarmUpCallCount);
     Assert.False(warmUpTask.IsCompleted);
 
-    warmUpTcs.TrySetResult();
+    processReadyTcs.TrySetResult();
     await warmUpTask;
 
     Assert.True(warmUpTask.IsCompleted);
@@ -234,11 +234,11 @@ public sealed class KataGoClientTests
   [Fact]
   public async Task WarmUpAsync_AlreadyWarm_ReturnsImmediately()
   {
-    TaskCompletionSource warmUpTcs = new();
-    FakeKataGoProcessIO fakeIO = new([], warmUpTcs);
+    TaskCompletionSource processReadyTcs = new();
+    FakeKataGoProcessIO fakeIO = new([], processReadyTcs);
     KataGoClient client = new(fakeIO);
 
-    warmUpTcs.TrySetResult();
+    processReadyTcs.TrySetResult();
 
     var warmUpTask = client.WarmUpAsync();
 
@@ -250,8 +250,8 @@ public sealed class KataGoClientTests
   [Fact]
   public async Task WarmUpAsync_TwoCallsWithOneCancelled_DoesNotAffectOtherCall()
   {
-    TaskCompletionSource warmUpTcs = new();
-    FakeKataGoProcessIO fakeIO = new([], warmUpTcs);
+    TaskCompletionSource processReadyTcs = new();
+    FakeKataGoProcessIO fakeIO = new([], processReadyTcs);
     KataGoClient client = new(fakeIO);
 
     CancellationTokenSource cts = new();
@@ -263,7 +263,7 @@ public sealed class KataGoClientTests
 
     await Assert.ThrowsAnyAsync<OperationCanceledException>(() => warmUpTask1);
 
-    warmUpTcs.TrySetResult();
+    processReadyTcs.TrySetResult();
     await warmUpTask2;
 
     Assert.True(warmUpTask2.IsCompleted);
@@ -272,9 +272,9 @@ public sealed class KataGoClientTests
   [Fact]
   public async Task WarmUpAsync_ConcurrentQueryCalls_DoesNotGetBlocked()
   {
-    TaskCompletionSource warmUpTcs = new();
+    TaskCompletionSource processReadyTcs = new();
     TaskCompletionSource<string?> responseTcs = new();
-    FakeKataGoProcessIO fakeIO = new([responseTcs], warmUpTcs);
+    FakeKataGoProcessIO fakeIO = new([responseTcs], processReadyTcs);
     KataGoClient client = new(fakeIO);
 
     var queryTask = client.QueryAsync(new("test1", [], 9, 7.5, new BotStrength("Superhuman")));
@@ -283,7 +283,7 @@ public sealed class KataGoClientTests
     Assert.False(queryTask.IsCompleted);
     Assert.False(warmUpTask.IsCompleted);
 
-    warmUpTcs.TrySetResult();
+    processReadyTcs.TrySetResult();
     await warmUpTask;
     Assert.True(warmUpTask.IsCompleted);
     Assert.False(queryTask.IsCompleted);
@@ -295,8 +295,8 @@ public sealed class KataGoClientTests
   [Fact]
   public async Task WarmUpAsync_ExceptionForProcess_Propagates()
   {
-    TaskCompletionSource warmUpTcs = new();
-    FakeKataGoProcessIO fakeIO = new([], warmUpTcs);
+    TaskCompletionSource processReadyTcs = new();
+    FakeKataGoProcessIO fakeIO = new([], processReadyTcs);
     KataGoClient client = new(fakeIO);
 
     var warmUpTask = client.WarmUpAsync();
@@ -304,7 +304,7 @@ public sealed class KataGoClientTests
     Assert.False(warmUpTask.IsCompleted);
 
     Exception thrown = new("test");
-    warmUpTcs.TrySetException(thrown);
+    processReadyTcs.TrySetException(thrown);
 
     Exception caught = await Assert.ThrowsAsync<Exception>(() => warmUpTask);
     Assert.Same(thrown, caught);

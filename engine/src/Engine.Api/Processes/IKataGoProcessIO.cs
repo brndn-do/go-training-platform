@@ -6,6 +6,13 @@ namespace Engine.Api.Processes;
 public interface IKataGoProcessIO
 {
   /// <summary>
+  /// Gets a value indicating whether the KataGo process has finished loading and is ready to
+  /// serve queries. A non-blocking snapshot check, unlike <see cref="WarmUpAsync"/> — never
+  /// throws, including after disposal.
+  /// </summary>
+  bool IsReady { get; }
+
+  /// <summary>
   /// Writes <paramref name="request"/> as a line to the process, then reads and returns the
   /// next line written back.
   /// </summary>
