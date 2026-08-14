@@ -107,7 +107,7 @@ public sealed class KataGoProcessIOIntegrationTests
   }
 
   [Fact]
-  public async Task WarmUpAsync_AlreadyDisposed_ThrowsInvalidOperationException()
+  public async Task WarmUpAsync_DisposedWhileWaiting_ThrowsInvalidOperationException()
   {
     var processOptions = GetOptions();
     var processIO = new KataGoProcessIO(processOptions);
@@ -117,6 +117,17 @@ public sealed class KataGoProcessIOIntegrationTests
 
     await Assert.ThrowsAsync<InvalidOperationException>(() => warmUpTask).WaitAsync(_timeout);
     await disposeTask.AsTask().WaitAsync(_timeout);
+  }
+
+  [Fact]
+  public async Task WarmUpAsync_CalledOnDisposedInstance_ThrowsObjectDisposedException()
+  {
+    var processOptions = GetOptions();
+    var processIO = new KataGoProcessIO(processOptions, shutdownGracePeriodMs: 1000);
+
+    await processIO.DisposeAsync().AsTask().WaitAsync(_timeout);
+
+    await Assert.ThrowsAsync<ObjectDisposedException>(() => processIO.WarmUpAsync()).WaitAsync(_timeout);
   }
 
   [Fact]

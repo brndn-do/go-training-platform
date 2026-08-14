@@ -19,5 +19,8 @@ public interface IKataGoClient
   /// </summary>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>A task that completes once the process is ready.</returns>
+  /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was cancelled.</exception>
+  /// <exception cref="InvalidOperationException">The process exited before becoming ready.</exception>
+  /// <exception cref="ObjectDisposedException">Called after this instance was disposed.</exception>
   Task WarmUpAsync(CancellationToken cancellationToken = default);
 }

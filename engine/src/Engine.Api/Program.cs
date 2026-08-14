@@ -19,5 +19,6 @@ var app = builder.Build();
 
 app.MapHealthEndpoints();
 app.MapSuggestionEndpoints();
+app.MapWarmUpEndpoints();
 
 app.Run();

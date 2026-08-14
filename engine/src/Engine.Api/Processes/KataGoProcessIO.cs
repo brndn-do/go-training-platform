@@ -74,6 +74,8 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
   /// <inheritdoc/>
   public async Task WarmUpAsync(CancellationToken cancellationToken = default)
   {
+    ObjectDisposedException.ThrowIf(_disposed, this);
+
     try
     {
       await _warmUpTcs.Task.WaitAsync(cancellationToken).WaitAsync(_processExitedCts.Token);
