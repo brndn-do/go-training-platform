@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<KataGoProcessOptions>(
   builder.Configuration.GetSection("KataGo"));
+builder.Services.Configure<KataGoClientOptions>(
+  builder.Configuration.GetSection("KataGoClient"));
 
 builder.Services.AddSingleton<IKataGoProcessIO, KataGoProcessIO>();
 builder.Services.AddSingleton<IKataGoClient, KataGoClient>();

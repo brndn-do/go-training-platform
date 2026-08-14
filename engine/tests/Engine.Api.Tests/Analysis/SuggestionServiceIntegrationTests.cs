@@ -23,7 +23,7 @@ public sealed class SuggestionServiceIntegrationTests
   public async Task GetSuggestionAsync_SuperhumanStrengthWithMoveHistory_ReturnsLegalSuggestion()
   {
     await using var processIO = new KataGoProcessIO(GetOptions());
-    await using var client = new KataGoClient(processIO);
+    await using var client = new KataGoClient(processIO, Options.Create(new KataGoClientOptions()));
     SuggestionService service = new(client, new Random());
 
     // Black (2,2), White passes, Black (6,6)
@@ -45,7 +45,7 @@ public sealed class SuggestionServiceIntegrationTests
   public async Task GetSuggestionAsync_KyuStrengthEmptyBoard_ReturnsLegalSuggestion()
   {
     await using var processIO = new KataGoProcessIO(GetOptions());
-    await using var client = new KataGoClient(processIO);
+    await using var client = new KataGoClient(processIO, Options.Create(new KataGoClientOptions()));
     SuggestionService service = new(client, new Random());
 
     IReadOnlyList<Move?> moveHistory = [];
@@ -66,7 +66,7 @@ public sealed class SuggestionServiceIntegrationTests
   public async Task GetSuggestionAsync_DanStrengthEmptyBoard_ReturnsLegalSuggestion()
   {
     await using var processIO = new KataGoProcessIO(GetOptions());
-    await using var client = new KataGoClient(processIO);
+    await using var client = new KataGoClient(processIO, Options.Create(new KataGoClientOptions()));
     SuggestionService service = new(client, new Random());
 
     IReadOnlyList<Move?> moveHistory = [];

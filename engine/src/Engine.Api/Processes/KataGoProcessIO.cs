@@ -24,10 +24,10 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
   /// Initializes a new instance of the <see cref="KataGoProcessIO"/> class, starting the
   /// KataGo process immediately.
   /// </summary>
-  /// <param name="options">Paths to the KataGo binary, config file, and models.</param>
-  /// <param name="shutdownGracePeriodMs">How long <see cref="DisposeAsync"/> waits for a graceful
-  /// shutdown of the KataGo process before force-killing.</param>
-  public KataGoProcessIO(IOptions<KataGoProcessOptions> options, int shutdownGracePeriodMs = 5000)
+  /// <param name="options">Paths to the KataGo binary, config file, and models, plus the
+  /// grace period <see cref="DisposeAsync"/> waits for a graceful shutdown of the KataGo
+  /// process before force-killing.</param>
+  public KataGoProcessIO(IOptions<KataGoProcessOptions> options)
   {
     var psi = GetProcessStartInfo(options.Value);
     _process = Process.Start(psi)!;
@@ -38,7 +38,7 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
 
     try
     {
-      _shutdownGracePeriod = TimeSpan.FromMilliseconds(shutdownGracePeriodMs);
+      _shutdownGracePeriod = TimeSpan.FromMilliseconds(options.Value.ProcessShutdownGracePeriodMs);
       _processReadyTcs = new();
 
       // listen for ready message

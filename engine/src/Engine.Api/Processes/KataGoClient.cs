@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Threading.Channels;
 using Engine.Api.Analysis;
+using Microsoft.Extensions.Options;
 
 namespace Engine.Api.Processes;
 
@@ -33,13 +34,13 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
   /// background worker immediately.
   /// </summary>
   /// <param name="processIO">The process I/O to exchange queries and responses through.</param>
-  /// <param name="shutdownGracePeriodMs">
+  /// <param name="options">
   /// How long <see cref="DisposeAsync"/> waits for in-flight work to finish on its own before
   /// forcefully cancelling it.
   /// </param>
-  public KataGoClient(IKataGoProcessIO processIO, int shutdownGracePeriodMs = 5000)
+  public KataGoClient(IKataGoProcessIO processIO, IOptions<KataGoClientOptions> options)
   {
-    _shutdownGracePeriod = TimeSpan.FromMilliseconds(shutdownGracePeriodMs);
+    _shutdownGracePeriod = TimeSpan.FromMilliseconds(options.Value.ClientShutdownGracePeriodMs);
     _processIO = processIO;
     _workerTask = Task.Run(() => ProcessQueueAsync(_shutdownCts.Token));
   }

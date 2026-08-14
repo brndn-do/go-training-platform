@@ -123,7 +123,8 @@ public sealed class KataGoProcessIOIntegrationTests
   public async Task WarmUpAsync_CalledOnDisposedInstance_ThrowsObjectDisposedException()
   {
     var processOptions = GetOptions();
-    var processIO = new KataGoProcessIO(processOptions, shutdownGracePeriodMs: 1000);
+    processOptions.Value.ProcessShutdownGracePeriodMs = 1000;
+    var processIO = new KataGoProcessIO(processOptions);
 
     await processIO.DisposeAsync().AsTask().WaitAsync(_timeout);
 
@@ -189,7 +190,8 @@ public sealed class KataGoProcessIOIntegrationTests
   {
     string query = """{"id":"test","moves":[],"rules":"chinese","komi":7.5,"boardXSize":19,"boardYSize":19,"includePolicy":true}""";
     var processOptions = GetOptions();
-    var processIO = new KataGoProcessIO(processOptions, shutdownGracePeriodMs: 1000);
+    processOptions.Value.ProcessShutdownGracePeriodMs = 1000;
+    var processIO = new KataGoProcessIO(processOptions);
     try
     {
       await processIO.ExchangeAsync(query).WaitAsync(_timeout);
@@ -206,7 +208,8 @@ public sealed class KataGoProcessIOIntegrationTests
   public async Task DisposeAsync_ProcessStillStarting_ForcesKillAfterGracePeriod()
   {
     var processOptions = GetOptions();
-    var processIO = new KataGoProcessIO(processOptions, shutdownGracePeriodMs: 1000);
+    processOptions.Value.ProcessShutdownGracePeriodMs = 1000;
+    var processIO = new KataGoProcessIO(processOptions);
 
     var sw = Stopwatch.StartNew();
     await processIO.DisposeAsync().AsTask().WaitAsync(_timeout);

@@ -1,6 +1,7 @@
 using Engine.Api.Analysis;
 using Engine.Api.Processes;
 using Engine.Api.Tests.Fakes;
+using Microsoft.Extensions.Options;
 
 namespace Engine.Api.Tests.Processes;
 
@@ -13,7 +14,7 @@ public sealed class KataGoClientTests
     responseTcs.TrySetResult("""{"id":"test","rootInfo":{"winrate":0.5}}""");
 
     FakeKataGoProcessIO fakeIO = new([responseTcs]);
-    KataGoClient client = new(fakeIO);
+    KataGoClient client = new(fakeIO, DefaultOptions());
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
 
@@ -32,7 +33,7 @@ public sealed class KataGoClientTests
     responseTcs.TrySetResult("""{"id":"test","rootInfo":{"winrate":0.5}}""");
 
     FakeKataGoProcessIO fakeIO = new([responseTcs]);
-    KataGoClient client = new(fakeIO);
+    KataGoClient client = new(fakeIO, DefaultOptions());
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
 
@@ -53,7 +54,7 @@ public sealed class KataGoClientTests
     TaskCompletionSource<string?> responseTcs2 = new();
 
     FakeKataGoProcessIO fakeIO = new([responseTcs1, responseTcs2]);
-    KataGoClient client = new(fakeIO);
+    KataGoClient client = new(fakeIO, DefaultOptions());
 
     KataGoQuery query1 = new("test1", [], 9, 7.5, new BotStrength("Superhuman"));
     KataGoQuery query2 = new("test2", [], 9, 7.5, new BotStrength("Superhuman"));
@@ -80,7 +81,7 @@ public sealed class KataGoClientTests
     TaskCompletionSource<string?> responseTcs2 = new();
 
     FakeKataGoProcessIO fakeIO = new([responseTcs1, responseTcs2]);
-    KataGoClient client = new(fakeIO);
+    KataGoClient client = new(fakeIO, DefaultOptions());
 
     KataGoQuery query1 = new("test1", [], 9, 7.5, new BotStrength("Superhuman"));
     KataGoQuery query2 = new("test2", [], 9, 7.5, new BotStrength("Superhuman"));
@@ -127,7 +128,7 @@ public sealed class KataGoClientTests
     TaskCompletionSource<string?> responseTcs3 = new();
 
     FakeKataGoProcessIO fakeIO = new([responseTcs1, responseTcs3]);
-    KataGoClient client = new(fakeIO);
+    KataGoClient client = new(fakeIO, DefaultOptions());
 
     KataGoQuery query1 = new("test1", [], 9, 7.5, new BotStrength("Superhuman"));
     KataGoQuery query2 = new("test2", [], 9, 7.5, new BotStrength("Superhuman"));
@@ -184,7 +185,7 @@ public sealed class KataGoClientTests
     responseTcs.TrySetResult(null);
 
     FakeKataGoProcessIO fakeIO = new([responseTcs]);
-    KataGoClient client = new(fakeIO);
+    KataGoClient client = new(fakeIO, DefaultOptions());
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
 
@@ -202,7 +203,7 @@ public sealed class KataGoClientTests
     responseTcs.TrySetResult("null");
 
     FakeKataGoProcessIO fakeIO = new([responseTcs]);
-    KataGoClient client = new(fakeIO);
+    KataGoClient client = new(fakeIO, DefaultOptions());
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
 
@@ -218,7 +219,7 @@ public sealed class KataGoClientTests
   {
     TaskCompletionSource processReadyTcs = new();
     FakeKataGoProcessIO fakeIO = new([], processReadyTcs);
-    KataGoClient client = new(fakeIO);
+    KataGoClient client = new(fakeIO, DefaultOptions());
 
     var warmUpTask = client.WarmUpAsync();
 
@@ -236,7 +237,7 @@ public sealed class KataGoClientTests
   {
     TaskCompletionSource processReadyTcs = new();
     FakeKataGoProcessIO fakeIO = new([], processReadyTcs);
-    KataGoClient client = new(fakeIO);
+    KataGoClient client = new(fakeIO, DefaultOptions());
 
     processReadyTcs.TrySetResult();
 
@@ -252,7 +253,7 @@ public sealed class KataGoClientTests
   {
     TaskCompletionSource processReadyTcs = new();
     FakeKataGoProcessIO fakeIO = new([], processReadyTcs);
-    KataGoClient client = new(fakeIO);
+    KataGoClient client = new(fakeIO, DefaultOptions());
 
     CancellationTokenSource cts = new();
     var warmUpTask1 = client.WarmUpAsync(cts.Token);
@@ -275,7 +276,7 @@ public sealed class KataGoClientTests
     TaskCompletionSource processReadyTcs = new();
     TaskCompletionSource<string?> responseTcs = new();
     FakeKataGoProcessIO fakeIO = new([responseTcs], processReadyTcs);
-    KataGoClient client = new(fakeIO);
+    KataGoClient client = new(fakeIO, DefaultOptions());
 
     var queryTask = client.QueryAsync(new("test1", [], 9, 7.5, new BotStrength("Superhuman")));
     var warmUpTask = client.WarmUpAsync();
@@ -297,7 +298,7 @@ public sealed class KataGoClientTests
   {
     TaskCompletionSource processReadyTcs = new();
     FakeKataGoProcessIO fakeIO = new([], processReadyTcs);
-    KataGoClient client = new(fakeIO);
+    KataGoClient client = new(fakeIO, DefaultOptions());
 
     var warmUpTask = client.WarmUpAsync();
 
@@ -320,7 +321,7 @@ public sealed class KataGoClientTests
     TaskCompletionSource<string?> responseTcs = new();
 
     FakeKataGoProcessIO fakeIO = new([responseTcs]);
-    KataGoClient client = new(fakeIO, shutdownGracePeriodMs);
+    KataGoClient client = new(fakeIO, DefaultOptions(shutdownGracePeriodMs));
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
     var task = client.QueryAsync(query);
@@ -352,7 +353,7 @@ public sealed class KataGoClientTests
     TaskCompletionSource<string?> responseTcs = new();
 
     FakeKataGoProcessIO fakeIO = new([responseTcs]);
-    KataGoClient client = new(fakeIO, shutdownGracePeriodMs);
+    KataGoClient client = new(fakeIO, DefaultOptions(shutdownGracePeriodMs));
 
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
     var task = client.QueryAsync(query);
@@ -371,6 +372,9 @@ public sealed class KataGoClientTests
 
     await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
   }
+
+  private static IOptions<KataGoClientOptions> DefaultOptions(int shutdownGracePeriodMs = 5000) =>
+    Options.Create(new KataGoClientOptions { ClientShutdownGracePeriodMs = shutdownGracePeriodMs });
 
   // polls condition every 1ms until it's true, failing with timeoutMessage if it never becomes
   // true within 5 seconds
