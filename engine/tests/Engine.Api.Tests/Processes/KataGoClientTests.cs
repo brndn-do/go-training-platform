@@ -370,64 +370,44 @@ public sealed class KataGoClientTests
   }
 
   [Fact]
-  public async Task IsResponsive_ProcessNotLoadedQueryExceedsThreshold_ReturnsFalse()
-  {
-    TaskCompletionSource<string?> responseTcs = new();
-    TaskCompletionSource processReadyTcs = new();
-    FakeKataGoProcessIO processIO = new([responseTcs], processReadyTcs);
-    KataGoClient client = new(processIO, DefaultOptions(clientLivenessThresholdMs: 100));
-
-    KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
-    _ = client.QueryAsync(query);
-
-    // wait until we pass the threshold
-    await Task.Delay(100 * 2);
-
-    // IsResponsive is a raw duration check with no special-casing for HasLoaded —
-    // composing startup and stuck-query signals is the caller's responsibility.
-    Assert.False(client.HasLoaded);
-    Assert.False(client.IsResponsive);
-  }
-
-  [Fact]
-  public async Task IsResponsive_NoQueryBeingProcessed_ReturnsTrue()
+  public async Task TimeSpentProcessing_NoQueryBeingProcessed_ReturnsZero()
   {
     TaskCompletionSource processReadyTcs = new();
     FakeKataGoProcessIO processIO = new([], processReadyTcs);
     KataGoClient client = new(processIO, DefaultOptions());
 
-    processReadyTcs.TrySetResult(); // process ready
-
-    Assert.True(client.HasLoaded);
-    Assert.True(client.IsResponsive);
+    Assert.Equal(TimeSpan.Zero, client.TimeSpentProcessing);
   }
 
   [Fact]
-  public async Task IsResponsive_QueryBeingProcessedExceedsThreshold_ReturnsFalse()
+  public async Task TimeSpentProcessing_QueryBeingProcessed_ReflectsElapsedTime()
   {
     TaskCompletionSource<string?> responseTcs = new();
     TaskCompletionSource processReadyTcs = new();
     FakeKataGoProcessIO processIO = new([responseTcs], processReadyTcs);
-    KataGoClient client = new(processIO, DefaultOptions(clientLivenessThresholdMs: 100));
+    KataGoClient client = new(processIO, DefaultOptions());
 
-    processReadyTcs.TrySetResult();
-
+    // deliberately not warmed up — TimeSpentProcessing shouldn't care about HasLoaded at all
     KataGoQuery query = new("test", [], 9, 7.5, new BotStrength("Superhuman"));
     _ = client.QueryAsync(query);
 
-    // wait until we pass the threshold
-    await Task.Delay(100 * 2);
+    await WaitForConditionAsync(
+      () => processIO.RequestsReceived.Length >= 1,
+      "Timed out waiting for the request.");
 
-    Assert.False(client.IsResponsive);
+    int waitMs = 100;
+    await Task.Delay(waitMs);
+
+    Assert.True(client.TimeSpentProcessing >= TimeSpan.FromMilliseconds(waitMs));
   }
 
   [Fact]
-  public async Task IsResponsive_AfterQueryCompletesInTime_ReturnsTrue()
+  public async Task TimeSpentProcessing_AfterQueryCompletes_ReturnsZero()
   {
     TaskCompletionSource<string?> responseTcs = new();
     TaskCompletionSource processReadyTcs = new();
     FakeKataGoProcessIO processIO = new([responseTcs], processReadyTcs);
-    KataGoClient client = new(processIO, DefaultOptions(clientLivenessThresholdMs: 100));
+    KataGoClient client = new(processIO, DefaultOptions());
 
     processReadyTcs.TrySetResult();
 
@@ -435,17 +415,11 @@ public sealed class KataGoClientTests
     responseTcs.TrySetResult("""{"id":"test","rootInfo":{"winrate":0.5}}""");
     await client.QueryAsync(query);
 
-    // query should have completed immediately
-    // wait until we pass the threshold, then check for responsiveness.
-    // shows that queries shouldn't make IsResponsive false
-    // after the threshold as long as they complete before the threshold.
-    await Task.Delay(100 * 2);
-
-    Assert.True(client.IsResponsive);
+    Assert.Equal(TimeSpan.Zero, client.TimeSpentProcessing);
   }
 
-  private static IOptions<KataGoClientOptions> DefaultOptions(int clientLivenessThresholdMs = 10000, int shutdownGracePeriodMs = 5000) =>
-    Options.Create(new KataGoClientOptions { ClientLivenessThresholdMs = clientLivenessThresholdMs, ClientShutdownGracePeriodMs = shutdownGracePeriodMs });
+  private static IOptions<KataGoClientOptions> DefaultOptions(int shutdownGracePeriodMs = 5000) =>
+    Options.Create(new KataGoClientOptions { ClientShutdownGracePeriodMs = shutdownGracePeriodMs });
 
   // polls condition every 1ms until it's true, failing with timeoutMessage if it never becomes
   // true within 5 seconds

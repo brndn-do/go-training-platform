@@ -12,12 +12,10 @@ public interface IKataGoClient
   bool HasLoaded { get; }
 
   /// <summary>
-  /// Gets a value indicating whether the KataGo process appears responsive — <c>false</c> only
-  /// when a single query has been in flight longer than the configured liveness threshold. A raw
-  /// signal that does not account for startup; combine with <see cref="HasLoaded"/> if a slow
-  /// response during startup shouldn't count as stuck.
+  /// Gets how long the current query has been in flight, or <see cref="TimeSpan.Zero"/> if no
+  /// query is currently being processed.
   /// </summary>
-  bool IsResponsive { get; }
+  TimeSpan TimeSpentProcessing { get; }
 
   /// <summary>
   /// Gets a value indicating whether the KataGo process has exited.

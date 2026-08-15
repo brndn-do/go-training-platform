@@ -17,8 +17,6 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
   };
 
-  private readonly TimeSpan _livenessThreshold;
-
   private readonly TimeSpan _shutdownGracePeriod;
 
   private readonly IKataGoProcessIO _processIO;
@@ -43,12 +41,10 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
   /// <param name="processIO">The process I/O to exchange queries and responses through.</param>
   /// <param name="options">
   /// How long <see cref="DisposeAsync"/> waits for in-flight work to finish on its own before
-  /// forcefully cancelling it, and how long a single query may stay in flight before
-  /// <see cref="IsResponsive"/> considers the process stuck.
+  /// forcefully cancelling it.
   /// </param>
   public KataGoClient(IKataGoProcessIO processIO, IOptions<KataGoClientOptions> options)
   {
-    _livenessThreshold = TimeSpan.FromMilliseconds(options.Value.ClientLivenessThresholdMs);
     _shutdownGracePeriod = TimeSpan.FromMilliseconds(options.Value.ClientShutdownGracePeriodMs);
     _processIO = processIO;
     _workerTask = Task.Run(() => ProcessQueueAsync(_shutdownCts.Token));
@@ -58,18 +54,17 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
   public bool HasLoaded => _processIO.HasLoaded;
 
   /// <inheritdoc/>
-  public bool IsResponsive
+  public TimeSpan TimeSpentProcessing
   {
     get
     {
       long startedAt = Interlocked.Read(ref _queryStartedAtTicks);
       if (startedAt == 0)
       {
-        // No queries are being processed, thus nothing is stuck as far as we know.
-        return true;
+        return TimeSpan.Zero;
       }
 
-      return Environment.TickCount64 - startedAt < _livenessThreshold.TotalMilliseconds;
+      return TimeSpan.FromMilliseconds(Environment.TickCount64 - startedAt);
     }
   }
 

@@ -2,13 +2,13 @@ using Engine.Api.Analysis;
 
 namespace Engine.Api.Tests.Fakes;
 
-public sealed class FakeKataGoClient(KataGoResponse responseToReturn, bool hasLoaded = true, bool isResponsive = true, bool hasExited = false) : IKataGoClient
+public sealed class FakeKataGoClient(KataGoResponse responseToReturn, bool hasLoaded = true, TimeSpan timeSpentProcessing = default, bool hasExited = false) : IKataGoClient
 {
   public KataGoQuery? QueryReceived { get; private set; }
 
   public bool HasLoaded { get; } = hasLoaded;
 
-  public bool IsResponsive { get; } = isResponsive;
+  public TimeSpan TimeSpentProcessing { get; } = timeSpentProcessing;
 
   public bool HasExited { get; } = hasExited;
 
