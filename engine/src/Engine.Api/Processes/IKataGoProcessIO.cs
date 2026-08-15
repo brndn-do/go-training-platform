@@ -10,7 +10,7 @@ public interface IKataGoProcessIO
   /// serve queries. A non-blocking snapshot check, unlike <see cref="WarmUpAsync"/> — never
   /// throws, including after disposal.
   /// </summary>
-  bool IsReady { get; }
+  bool HasLoaded { get; }
 
   /// <summary>
   /// Writes <paramref name="request"/> as a line to the process, then reads and returns the

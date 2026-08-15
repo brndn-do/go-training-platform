@@ -62,7 +62,7 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
   }
 
   /// <inheritdoc/>
-  public bool IsReady => _processReadyTcs.Task.IsCompletedSuccessfully;
+  public bool HasLoaded => _processReadyTcs.Task.IsCompletedSuccessfully;
 
   /// <inheritdoc/>
   public async Task<string?> ExchangeAsync(string request, CancellationToken cancellationToken = default)

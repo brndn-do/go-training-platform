@@ -370,7 +370,7 @@ public sealed class KataGoClientTests
   }
 
   [Fact]
-  public async Task IsLive_ProcessNotReady_ReturnsTrueRegardlessOfQueryDuration()
+  public async Task IsResponsive_ProcessNotLoadedQueryExceedsThreshold_ReturnsFalse()
   {
     TaskCompletionSource<string?> responseTcs = new();
     TaskCompletionSource processReadyTcs = new();
@@ -383,14 +383,14 @@ public sealed class KataGoClientTests
     // wait until we pass the threshold
     await Task.Delay(100 * 2);
 
-    // even though our query is taking long,
-    // the process is not ready, so should be considered live
-    Assert.False(client.IsReady);
-    Assert.True(client.IsLive);
+    // IsResponsive is a raw duration check with no special-casing for HasLoaded —
+    // composing startup and stuck-query signals is the caller's responsibility.
+    Assert.False(client.HasLoaded);
+    Assert.False(client.IsResponsive);
   }
 
   [Fact]
-  public async Task IsLive_NoQueryBeingProcessed_ReturnsTrue()
+  public async Task IsResponsive_NoQueryBeingProcessed_ReturnsTrue()
   {
     TaskCompletionSource processReadyTcs = new();
     FakeKataGoProcessIO processIO = new([], processReadyTcs);
@@ -398,12 +398,12 @@ public sealed class KataGoClientTests
 
     processReadyTcs.TrySetResult(); // process ready
 
-    Assert.True(client.IsReady);
-    Assert.True(client.IsLive);
+    Assert.True(client.HasLoaded);
+    Assert.True(client.IsResponsive);
   }
 
   [Fact]
-  public async Task IsLive_QueryBeingProcessedExceedsThreshold_ReturnsFalse()
+  public async Task IsResponsive_QueryBeingProcessedExceedsThreshold_ReturnsFalse()
   {
     TaskCompletionSource<string?> responseTcs = new();
     TaskCompletionSource processReadyTcs = new();
@@ -418,11 +418,11 @@ public sealed class KataGoClientTests
     // wait until we pass the threshold
     await Task.Delay(100 * 2);
 
-    Assert.False(client.IsLive);
+    Assert.False(client.IsResponsive);
   }
 
   [Fact]
-  public async Task IsLive_AfterQueryCompletesInTime_ReturnsTrue()
+  public async Task IsResponsive_AfterQueryCompletesInTime_ReturnsTrue()
   {
     TaskCompletionSource<string?> responseTcs = new();
     TaskCompletionSource processReadyTcs = new();
@@ -436,12 +436,12 @@ public sealed class KataGoClientTests
     await client.QueryAsync(query);
 
     // query should have completed immediately
-    // wait until we pass the threshold, then check for liveness.
-    // shows that queries shouldn't make isLive false
+    // wait until we pass the threshold, then check for responsiveness.
+    // shows that queries shouldn't make IsResponsive false
     // after the threshold as long as they complete before the threshold.
     await Task.Delay(100 * 2);
 
-    Assert.True(client.IsLive);
+    Assert.True(client.IsResponsive);
   }
 
   private static IOptions<KataGoClientOptions> DefaultOptions(int clientLivenessThresholdMs = 10000, int shutdownGracePeriodMs = 5000) =>

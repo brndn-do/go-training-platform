@@ -12,7 +12,7 @@ public sealed class FakeKataGoProcessIO(TaskCompletionSource<string?>[] response
 
   public int WarmUpCallCount { get; private set; }
 
-  public bool IsReady => _processReadyTcs.Task.IsCompletedSuccessfully;
+  public bool HasLoaded => _processReadyTcs.Task.IsCompletedSuccessfully;
 
   public async Task<string?> ExchangeAsync(string request, CancellationToken cancellationToken = default)
   {

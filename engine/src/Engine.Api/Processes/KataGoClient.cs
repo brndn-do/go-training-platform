@@ -44,7 +44,7 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
   /// <param name="options">
   /// How long <see cref="DisposeAsync"/> waits for in-flight work to finish on its own before
   /// forcefully cancelling it, and how long a single query may stay in flight before
-  /// <see cref="IsLive"/> considers the process stuck.
+  /// <see cref="IsResponsive"/> considers the process stuck.
   /// </param>
   public KataGoClient(IKataGoProcessIO processIO, IOptions<KataGoClientOptions> options)
   {
@@ -55,21 +55,13 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
   }
 
   /// <inheritdoc/>
-  public bool IsReady => _processIO.IsReady;
+  public bool HasLoaded => _processIO.HasLoaded;
 
   /// <inheritdoc/>
-  public bool IsLive
+  public bool IsResponsive
   {
     get
     {
-      if (!_processIO.IsReady)
-      {
-        // The process is considered "live" even if it's just getting ready. A query can still
-        // be sent before KataGo is ready to receive requests, in which case we expect the response
-        // to take a long time. We don't want to say the KataGo process is stuck in this case.
-        return true;
-      }
-
       long startedAt = Interlocked.Read(ref _queryStartedAtTicks);
       if (startedAt == 0)
       {

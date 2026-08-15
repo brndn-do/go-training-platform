@@ -132,34 +132,34 @@ public sealed class KataGoProcessIOIntegrationTests
   }
 
   [Fact]
-  public async Task IsReady_FreshProcess_ReturnsFalse()
+  public async Task HasLoaded_FreshProcess_ReturnsFalse()
   {
     var processOptions = GetOptions();
     await using var processIO = new KataGoProcessIO(processOptions);
 
-    Assert.False(processIO.IsReady);
+    Assert.False(processIO.HasLoaded);
   }
 
   [Fact]
-  public async Task IsReady_AfterWarmUp_ReturnsTrue()
+  public async Task HasLoaded_AfterWarmUp_ReturnsTrue()
   {
     var processOptions = GetOptions();
     await using var processIO = new KataGoProcessIO(processOptions);
 
     await processIO.WarmUpAsync().WaitAsync(_timeout);
 
-    Assert.True(processIO.IsReady);
+    Assert.True(processIO.HasLoaded);
   }
 
   [Fact]
-  public async Task IsReady_CalledOnDisposedInstance_DoesNotThrow()
+  public async Task HasLoaded_CalledOnDisposedInstance_DoesNotThrow()
   {
     var processOptions = GetOptions();
     var processIO = new KataGoProcessIO(processOptions);
 
     await processIO.DisposeAsync().AsTask().WaitAsync(_timeout);
 
-    Assert.False(processIO.IsReady);
+    Assert.False(processIO.HasLoaded);
   }
 
   [Fact]
@@ -221,14 +221,14 @@ public sealed class KataGoProcessIOIntegrationTests
 
   private static IOptions<KataGoProcessOptions> GetOptions()
   {
-    string binaryPath = Environment.GetEnvironmentVariable("KataGo__BinaryPath")
-      ?? throw new InvalidOperationException("Set KataGo__BinaryPath to run this test.");
-    string modelPath = Environment.GetEnvironmentVariable("KataGo__ModelPath")
-      ?? throw new InvalidOperationException("Set KataGo__ModelPath to run this test.");
-    string humanModelPath = Environment.GetEnvironmentVariable("KataGo__HumanModelPath")
-      ?? throw new InvalidOperationException("Set KataGo__HumanModelPath to run this test.");
-    string configPath = Environment.GetEnvironmentVariable("KataGo__ConfigPath")
-      ?? throw new InvalidOperationException("Set KataGo__ConfigPath to run this test.");
+    string binaryPath = Environment.GetEnvironmentVariable("KataGoProcess__BinaryPath")
+      ?? throw new InvalidOperationException("Set KataGoProcess__BinaryPath to run this test.");
+    string modelPath = Environment.GetEnvironmentVariable("KataGoProcess__ModelPath")
+      ?? throw new InvalidOperationException("Set KataGoProcess__ModelPath to run this test.");
+    string humanModelPath = Environment.GetEnvironmentVariable("KataGoProcess__HumanModelPath")
+      ?? throw new InvalidOperationException("Set KataGoProcess__HumanModelPath to run this test.");
+    string configPath = Environment.GetEnvironmentVariable("KataGoProcess__ConfigPath")
+      ?? throw new InvalidOperationException("Set KataGoProcess__ConfigPath to run this test.");
 
     return Options.Create(new KataGoProcessOptions
     {
