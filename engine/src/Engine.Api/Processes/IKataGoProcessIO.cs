@@ -13,6 +13,12 @@ public interface IKataGoProcessIO
   bool HasLoaded { get; }
 
   /// <summary>
+  /// Gets a value indicating whether the KataGo process has exited. A non-blocking snapshot
+  /// check, unlike <see cref="WarmUpAsync"/> — never throws, including after disposal.
+  /// </summary>
+  bool HasExited { get; }
+
+  /// <summary>
   /// Writes <paramref name="request"/> as a line to the process, then reads and returns the
   /// next line written back.
   /// </summary>

@@ -74,6 +74,9 @@ public sealed class KataGoClient : IKataGoClient, IAsyncDisposable
   }
 
   /// <inheritdoc/>
+  public bool HasExited => _processIO.HasExited;
+
+  /// <inheritdoc/>
   public async Task<KataGoResponse> QueryAsync(KataGoQuery query, CancellationToken cancellationToken = default)
   {
     var item = new WorkItem(query);

@@ -65,6 +65,9 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
   public bool HasLoaded => _processReadyTcs.Task.IsCompletedSuccessfully;
 
   /// <inheritdoc/>
+  public bool HasExited => _disposed || _process.HasExited;
+
+  /// <inheritdoc/>
   public async Task<string?> ExchangeAsync(string request, CancellationToken cancellationToken = default)
   {
     await _process.StandardInput.WriteLineAsync(request.AsMemory(), cancellationToken);

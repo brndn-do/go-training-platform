@@ -104,6 +104,8 @@ public sealed class KataGoProcessIOIntegrationTests
     await using var processIO = new KataGoProcessIO(processOptions);
 
     await Assert.ThrowsAsync<InvalidOperationException>(() => processIO.WarmUpAsync()).WaitAsync(_timeout);
+
+    Assert.True(processIO.HasExited);
   }
 
   [Fact]
@@ -163,6 +165,43 @@ public sealed class KataGoProcessIOIntegrationTests
   }
 
   [Fact]
+  public async Task HasExited_FreshProcess_ReturnsFalse()
+  {
+    var processOptions = GetOptions();
+    await using var processIO = new KataGoProcessIO(processOptions);
+
+    Assert.False(processIO.HasExited);
+  }
+
+  [Fact]
+  public async Task HasExited_AfterProcessCrashes_ReturnsTrue()
+  {
+    var processOptions = GetOptions();
+    processOptions.Value.ModelPath = "invalidpath";
+    await using var processIO = new KataGoProcessIO(processOptions);
+
+    // the process crashes asynchronously; poll rather than assert immediately
+    using CancellationTokenSource cts = new(_timeout);
+    while (!processIO.HasExited && !cts.IsCancellationRequested)
+    {
+      await Task.Delay(10);
+    }
+
+    Assert.True(processIO.HasExited);
+  }
+
+  [Fact]
+  public async Task HasExited_CalledOnDisposedInstance_DoesNotThrow()
+  {
+    var processOptions = GetOptions();
+    var processIO = new KataGoProcessIO(processOptions);
+
+    await processIO.DisposeAsync().AsTask().WaitAsync(_timeout);
+
+    Assert.True(processIO.HasExited);
+  }
+
+  [Fact]
   public async Task DisposeAsync_AlreadyDisposed_Succeeds()
   {
     var processOptions = GetOptions();
@@ -179,8 +218,14 @@ public sealed class KataGoProcessIOIntegrationTests
     processOptions.Value.ModelPath = "invalidpath";
     var processIO = new KataGoProcessIO(processOptions);
 
-    // wait until the process exits
-    await Assert.ThrowsAsync<InvalidOperationException>(() => processIO.WarmUpAsync()).WaitAsync(_timeout);
+    // the process crashes asynchronously; poll rather than assert immediately
+    using CancellationTokenSource cts = new(_timeout);
+    while (!processIO.HasExited && !cts.IsCancellationRequested)
+    {
+      await Task.Delay(10);
+    }
+
+    Assert.True(processIO.HasExited);
 
     await processIO.DisposeAsync().AsTask().WaitAsync(_timeout);
   }

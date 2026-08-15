@@ -20,6 +20,11 @@ public interface IKataGoClient
   bool IsResponsive { get; }
 
   /// <summary>
+  /// Gets a value indicating whether the KataGo process has exited.
+  /// </summary>
+  bool HasExited { get; }
+
+  /// <summary>
   /// Queries the KataGo process for analysis.
   /// </summary>
   /// <param name="query">The query to analyze.</param>
