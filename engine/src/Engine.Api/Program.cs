@@ -8,6 +8,10 @@ builder.Services.Configure<KataGoProcessOptions>(
   builder.Configuration.GetSection("KataGoProcess"));
 builder.Services.Configure<KataGoClientOptions>(
   builder.Configuration.GetSection("KataGoClient"));
+builder.Services.Configure<ReadyHealthCheckOptions>(
+  builder.Configuration.GetSection("ReadyHealthCheck"));
+builder.Services.Configure<LiveHealthCheckOptions>(
+  builder.Configuration.GetSection("LiveHealthCheck"));
 
 builder.Services.AddSingleton<IKataGoProcessIO, KataGoProcessIO>();
 builder.Services.AddSingleton<IKataGoClient, KataGoClient>();
@@ -15,7 +19,10 @@ builder.Services.AddSingleton<IKataGoClient, KataGoClient>();
 builder.Services.AddScoped<Random>();
 builder.Services.AddScoped<SuggestionService>();
 
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+  .AddCheck<StartupHealthCheck>("startup", tags: ["startup"])
+  .AddCheck<ReadyHealthCheck>("ready", tags: ["ready"])
+  .AddCheck<LiveHealthCheck>("live", tags: ["live"]);
 
 var app = builder.Build();
 
