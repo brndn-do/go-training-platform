@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<KataGoProcessOptions>(
   builder.Configuration.GetSection("KataGoProcess"));
+builder.Services.Configure<KataGoProcessIOOptions>(
+  builder.Configuration.GetSection("KataGoProcessIO"));
 builder.Services.Configure<KataGoClientOptions>(
   builder.Configuration.GetSection("KataGoClient"));
 builder.Services.Configure<ReadyHealthCheckOptions>(

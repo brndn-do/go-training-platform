@@ -21,8 +21,7 @@ public sealed class KataGoProcessIOIntegrationTests
   public async Task ExchangeAsync_SingleSuperhumanQuery_ReturnsCorrespondingResponse()
   {
     string query = """{"id":"test","moves":[],"rules":"chinese","komi":7.5,"boardXSize":19,"boardYSize":19,"includePolicy":true}""";
-    var processOptions = GetOptions();
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
     var result = await processIO.ExchangeAsync(query).WaitAsync(_timeout);
     Assert.Contains("\"id\":\"test\"", result);
     Assert.DoesNotContain("\"error\"", result);
@@ -33,8 +32,7 @@ public sealed class KataGoProcessIOIntegrationTests
   public async Task ExchangeAsync_SingleHumanQuery_ReturnsCorrespondingResponse()
   {
     string query = """{"id":"test","moves":[],"rules":"chinese","komi":7.5,"boardXSize":19,"boardYSize":19,"includePolicy":true,"overrideSettings":{"humanSLProfile":"rank_5k"}}""";
-    var processOptions = GetOptions();
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
     var result = await processIO.ExchangeAsync(query).WaitAsync(_timeout);
     Assert.Contains("\"id\":\"test\"", result);
     Assert.DoesNotContain("\"error\"", result);
@@ -45,8 +43,7 @@ public sealed class KataGoProcessIOIntegrationTests
   {
     string query1 = """{"id":"test1","moves":[],"rules":"chinese","komi":7.5,"boardXSize":19,"boardYSize":19,"includePolicy":true,"overrideSettings":{"humanSLProfile":"rank_5k"}}""";
     string query2 = """{"id":"test2","moves":[],"rules":"chinese","komi":7.5,"boardXSize":19,"boardYSize":19,"includePolicy":true,"overrideSettings":{"humanSLProfile":"rank_5k"}}""";
-    var processOptions = GetOptions();
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
     var result1 = await processIO.ExchangeAsync(query1).WaitAsync(_timeout);
     var result2 = await processIO.ExchangeAsync(query2).WaitAsync(_timeout);
     Assert.Contains("\"id\":\"test1\"", result1);
@@ -59,9 +56,9 @@ public sealed class KataGoProcessIOIntegrationTests
   public async Task ExchangeAsync_ProcessHasExited_ReturnsNull()
   {
     string query = """{"id":"test","moves":[],"rules":"chinese","komi":7.5,"boardXSize":19,"boardYSize":19,"includePolicy":true}""";
-    var processOptions = GetOptions();
+    var processOptions = GetProcessOptions();
     processOptions.Value.ModelPath = "invalidpath";
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), processOptions);
 
     // the process crashes asynchronously; poll rather than assert immediately
     using CancellationTokenSource cts = new(_timeout);
@@ -78,9 +75,9 @@ public sealed class KataGoProcessIOIntegrationTests
   public async Task ExchangeAsync_ProcessExitsDuringQuery_ReturnsNull()
   {
     string query = """{"id":"test","moves":[],"rules":"chinese","komi":7.5,"boardXSize":19,"boardYSize":19,"includePolicy":true}""";
-    var processOptions = GetOptions();
+    var processOptions = GetProcessOptions();
     processOptions.Value.ModelPath = "invalidpath";
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), processOptions);
 
     // send a query before it has time to crash
     var result = await processIO.ExchangeAsync(query).WaitAsync(_timeout);
@@ -91,8 +88,7 @@ public sealed class KataGoProcessIOIntegrationTests
   public async Task ExchangeAsync_CallerCancelled_ThrowsOperationCanceledException()
   {
     string query = """{"id":"test","moves":[],"rules":"chinese","komi":7.5,"boardXSize":19,"boardYSize":19,"includePolicy":true}""";
-    var processOptions = GetOptions();
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
     using var cts = new CancellationTokenSource();
 
     // the process hasn't finished loading yet, so the real response can't arrive
@@ -106,8 +102,7 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task WarmUpAsync_FreshProcess_CompletesOnceReady()
   {
-    var processOptions = GetOptions();
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
     Task warmUpTask = processIO.WarmUpAsync();
     await warmUpTask.WaitAsync(_timeout);
 
@@ -117,8 +112,7 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task WarmUpAsync_AlreadyWarm_CompletesImmediately()
   {
-    var processOptions = GetOptions();
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
     Task warmUpTask1 = processIO.WarmUpAsync();
     await warmUpTask1.WaitAsync(_timeout);
 
@@ -134,8 +128,7 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task WarmUpAsync_CallerCancelled_ThrowsOperationCanceledException()
   {
-    var processOptions = GetOptions();
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
     using var cts = new CancellationTokenSource();
 
     var warmUpTask = processIO.WarmUpAsync(cts.Token);
@@ -147,9 +140,9 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task WarmUpAsync_ProcessExited_ThrowsInvalidOperationException()
   {
-    var processOptions = GetOptions();
+    var processOptions = GetProcessOptions();
     processOptions.Value.ModelPath = "invalidpath";
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), processOptions);
 
     await Assert.ThrowsAsync<InvalidOperationException>(() => processIO.WarmUpAsync()).WaitAsync(_timeout);
 
@@ -159,8 +152,7 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task WarmUpAsync_DisposedWhileWaiting_ThrowsInvalidOperationException()
   {
-    var processOptions = GetOptions();
-    var processIO = new KataGoProcessIO(processOptions);
+    var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
 
     var warmUpTask = processIO.WarmUpAsync();
     var disposeTask = processIO.DisposeAsync();
@@ -172,9 +164,9 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task WarmUpAsync_CalledOnDisposedInstance_ThrowsObjectDisposedException()
   {
-    var processOptions = GetOptions();
-    processOptions.Value.ProcessShutdownGracePeriodMs = 1000;
-    var processIO = new KataGoProcessIO(processOptions);
+    var processIOOptions = GetProcessIOOptions();
+    processIOOptions.Value.ProcessShutdownGracePeriodMs = 1000;
+    var processIO = new KataGoProcessIO(processIOOptions, GetProcessOptions());
 
     await processIO.DisposeAsync().AsTask().WaitAsync(_timeout);
 
@@ -184,8 +176,7 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task HasLoaded_FreshProcess_ReturnsFalse()
   {
-    var processOptions = GetOptions();
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
 
     Assert.False(processIO.HasLoaded);
   }
@@ -193,8 +184,7 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task HasLoaded_AfterWarmUp_ReturnsTrue()
   {
-    var processOptions = GetOptions();
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
 
     await processIO.WarmUpAsync().WaitAsync(_timeout);
 
@@ -204,8 +194,7 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task HasLoaded_CalledOnDisposedInstance_DoesNotThrow()
   {
-    var processOptions = GetOptions();
-    var processIO = new KataGoProcessIO(processOptions);
+    var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
 
     await processIO.DisposeAsync().AsTask().WaitAsync(_timeout);
 
@@ -215,8 +204,7 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task HasExited_FreshProcess_ReturnsFalse()
   {
-    var processOptions = GetOptions();
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
 
     Assert.False(processIO.HasExited);
   }
@@ -224,9 +212,9 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task HasExited_AfterProcessCrashes_ReturnsTrue()
   {
-    var processOptions = GetOptions();
+    var processOptions = GetProcessOptions();
     processOptions.Value.ModelPath = "invalidpath";
-    await using var processIO = new KataGoProcessIO(processOptions);
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), processOptions);
 
     // the process crashes asynchronously; poll rather than assert immediately
     using CancellationTokenSource cts = new(_timeout);
@@ -241,8 +229,7 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task HasExited_CalledOnDisposedInstance_DoesNotThrow()
   {
-    var processOptions = GetOptions();
-    var processIO = new KataGoProcessIO(processOptions);
+    var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
 
     await processIO.DisposeAsync().AsTask().WaitAsync(_timeout);
 
@@ -252,8 +239,7 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task DisposeAsync_AlreadyDisposed_Succeeds()
   {
-    var processOptions = GetOptions();
-    var processIO = new KataGoProcessIO(processOptions);
+    var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
 
     await processIO.DisposeAsync().AsTask().WaitAsync(_timeout);
     await processIO.DisposeAsync().AsTask().WaitAsync(_timeout);
@@ -262,9 +248,9 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task DisposeAsync_ProcessExited_Succeeds()
   {
-    var processOptions = GetOptions();
+    var processOptions = GetProcessOptions();
     processOptions.Value.ModelPath = "invalidpath";
-    var processIO = new KataGoProcessIO(processOptions);
+    var processIO = new KataGoProcessIO(GetProcessIOOptions(), processOptions);
 
     // the process crashes asynchronously; poll rather than assert immediately
     using CancellationTokenSource cts = new(_timeout);
@@ -282,9 +268,9 @@ public sealed class KataGoProcessIOIntegrationTests
   public async Task DisposeAsync_AfterRealUse_ExitsGracefully()
   {
     string query = """{"id":"test","moves":[],"rules":"chinese","komi":7.5,"boardXSize":19,"boardYSize":19,"includePolicy":true}""";
-    var processOptions = GetOptions();
-    processOptions.Value.ProcessShutdownGracePeriodMs = 1000;
-    var processIO = new KataGoProcessIO(processOptions);
+    var processIOOptions = GetProcessIOOptions();
+    processIOOptions.Value.ProcessShutdownGracePeriodMs = 1000;
+    var processIO = new KataGoProcessIO(processIOOptions, GetProcessOptions());
     try
     {
       await processIO.ExchangeAsync(query).WaitAsync(_timeout);
@@ -300,9 +286,9 @@ public sealed class KataGoProcessIOIntegrationTests
   [Fact]
   public async Task DisposeAsync_ProcessStillStarting_ForcesKillAfterGracePeriod()
   {
-    var processOptions = GetOptions();
-    processOptions.Value.ProcessShutdownGracePeriodMs = 1000;
-    var processIO = new KataGoProcessIO(processOptions);
+    var processIOOptions = GetProcessIOOptions();
+    processIOOptions.Value.ProcessShutdownGracePeriodMs = 1000;
+    var processIO = new KataGoProcessIO(processIOOptions, GetProcessOptions());
 
     var sw = Stopwatch.StartNew();
     await processIO.DisposeAsync().AsTask().WaitAsync(_timeout);
@@ -312,7 +298,12 @@ public sealed class KataGoProcessIOIntegrationTests
       $"Expected the forceful-kill path (~1000ms+) that completes under 5000ms, took {sw.ElapsedMilliseconds}ms.");
   }
 
-  private static IOptions<KataGoProcessOptions> GetOptions()
+  private static IOptions<KataGoProcessIOOptions> GetProcessIOOptions()
+  {
+    return Options.Create(new KataGoProcessIOOptions());
+  }
+
+  private static IOptions<KataGoProcessOptions> GetProcessOptions()
   {
     string binaryPath = Environment.GetEnvironmentVariable("KataGoProcess__BinaryPath")
       ?? throw new InvalidOperationException("Set KataGoProcess__BinaryPath to run this test.");

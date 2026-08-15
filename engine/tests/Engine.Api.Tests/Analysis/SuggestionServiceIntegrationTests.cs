@@ -22,7 +22,7 @@ public sealed class SuggestionServiceIntegrationTests
   [Fact]
   public async Task GetSuggestionAsync_SuperhumanStrengthWithMoveHistory_ReturnsLegalSuggestion()
   {
-    await using var processIO = new KataGoProcessIO(GetOptions());
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
     await using var client = new KataGoClient(processIO, Options.Create(new KataGoClientOptions()));
     SuggestionService service = new(client, new Random());
 
@@ -44,7 +44,7 @@ public sealed class SuggestionServiceIntegrationTests
   [Fact]
   public async Task GetSuggestionAsync_KyuStrengthEmptyBoard_ReturnsLegalSuggestion()
   {
-    await using var processIO = new KataGoProcessIO(GetOptions());
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
     await using var client = new KataGoClient(processIO, Options.Create(new KataGoClientOptions()));
     SuggestionService service = new(client, new Random());
 
@@ -65,7 +65,7 @@ public sealed class SuggestionServiceIntegrationTests
   [Fact]
   public async Task GetSuggestionAsync_DanStrengthEmptyBoard_ReturnsLegalSuggestion()
   {
-    await using var processIO = new KataGoProcessIO(GetOptions());
+    await using var processIO = new KataGoProcessIO(GetProcessIOOptions(), GetProcessOptions());
     await using var client = new KataGoClient(processIO, Options.Create(new KataGoClientOptions()));
     SuggestionService service = new(client, new Random());
 
@@ -83,7 +83,12 @@ public sealed class SuggestionServiceIntegrationTests
     }
   }
 
-  private static IOptions<KataGoProcessOptions> GetOptions()
+  private static IOptions<KataGoProcessIOOptions> GetProcessIOOptions()
+  {
+    return Options.Create(new KataGoProcessIOOptions());
+  }
+
+  private static IOptions<KataGoProcessOptions> GetProcessOptions()
   {
     string binaryPath = Environment.GetEnvironmentVariable("KataGoProcess__BinaryPath")
       ?? throw new InvalidOperationException("Set KataGoProcess__BinaryPath to run this test.");
