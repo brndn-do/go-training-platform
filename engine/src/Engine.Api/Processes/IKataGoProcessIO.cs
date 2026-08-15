@@ -24,7 +24,11 @@ public interface IKataGoProcessIO
   /// </summary>
   /// <param name="request">The line to send.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
-  /// <returns>The line read back, or <c>null</c> if the stream ended before one arrived.</returns>
+  /// <returns>
+  /// The line read back, or <c>null</c> if the process has already exited or exits before
+  /// responding.
+  /// </returns>
+  /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was cancelled.</exception>
   Task<string?> ExchangeAsync(string request, CancellationToken cancellationToken = default);
 
   /// <summary>

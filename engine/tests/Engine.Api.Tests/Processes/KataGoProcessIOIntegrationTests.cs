@@ -56,6 +56,54 @@ public sealed class KataGoProcessIOIntegrationTests
   }
 
   [Fact]
+  public async Task ExchangeAsync_ProcessHasExited_ReturnsNull()
+  {
+    string query = """{"id":"test","moves":[],"rules":"chinese","komi":7.5,"boardXSize":19,"boardYSize":19,"includePolicy":true}""";
+    var processOptions = GetOptions();
+    processOptions.Value.ModelPath = "invalidpath";
+    await using var processIO = new KataGoProcessIO(processOptions);
+
+    // the process crashes asynchronously; poll rather than assert immediately
+    using CancellationTokenSource cts = new(_timeout);
+    while (!processIO.HasExited && !cts.IsCancellationRequested)
+    {
+      await Task.Delay(10);
+    }
+
+    var result = await processIO.ExchangeAsync(query).WaitAsync(_timeout);
+    Assert.Null(result);
+  }
+
+  [Fact]
+  public async Task ExchangeAsync_ProcessExitsDuringQuery_ReturnsNull()
+  {
+    string query = """{"id":"test","moves":[],"rules":"chinese","komi":7.5,"boardXSize":19,"boardYSize":19,"includePolicy":true}""";
+    var processOptions = GetOptions();
+    processOptions.Value.ModelPath = "invalidpath";
+    await using var processIO = new KataGoProcessIO(processOptions);
+
+    // send a query before it has time to crash
+    var result = await processIO.ExchangeAsync(query).WaitAsync(_timeout);
+    Assert.Null(result);
+  }
+
+  [Fact]
+  public async Task ExchangeAsync_CallerCancelled_ThrowsOperationCanceledException()
+  {
+    string query = """{"id":"test","moves":[],"rules":"chinese","komi":7.5,"boardXSize":19,"boardYSize":19,"includePolicy":true}""";
+    var processOptions = GetOptions();
+    await using var processIO = new KataGoProcessIO(processOptions);
+    using var cts = new CancellationTokenSource();
+
+    // the process hasn't finished loading yet, so the real response can't arrive
+    // in time to race the cancellation
+    var exchangeTask = processIO.ExchangeAsync(query, cts.Token);
+    cts.Cancel();
+
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(() => exchangeTask).WaitAsync(_timeout);
+  }
+
+  [Fact]
   public async Task WarmUpAsync_FreshProcess_CompletesOnceReady()
   {
     var processOptions = GetOptions();

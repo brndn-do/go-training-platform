@@ -29,7 +29,10 @@ public interface IKataGoClient
   /// </summary>
   /// <param name="query">The query to analyze.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
-  /// <returns>The KataGo response.</returns>
+  /// <returns>
+  /// The KataGo response. If the process is already dead or exits before responding, this is
+  /// an error response (<see cref="KataGoResponse.IsError"/>) rather than a thrown exception.
+  /// </returns>
   Task<KataGoResponse> QueryAsync(KataGoQuery query, CancellationToken cancellationToken = default);
 
   /// <summary>

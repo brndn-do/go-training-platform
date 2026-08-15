@@ -70,11 +70,18 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
   /// <inheritdoc/>
   public async Task<string?> ExchangeAsync(string request, CancellationToken cancellationToken = default)
   {
-    await _process.StandardInput.WriteLineAsync(request.AsMemory(), cancellationToken);
-    await _process.StandardInput.FlushAsync(cancellationToken);
+    try
+    {
+      await _process.StandardInput.WriteLineAsync(request.AsMemory(), cancellationToken);
+      await _process.StandardInput.FlushAsync(cancellationToken);
 
-    string? response = await _process.StandardOutput.ReadLineAsync(cancellationToken);
-    return response;
+      string? response = await _process.StandardOutput.ReadLineAsync(cancellationToken);
+      return response;
+    }
+    catch (Exception ex) when (ex is not OperationCanceledException)
+    {
+      return null;
+    }
   }
 
   /// <inheritdoc/>
