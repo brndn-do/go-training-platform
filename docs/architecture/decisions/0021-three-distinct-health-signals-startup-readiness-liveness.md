@@ -22,7 +22,7 @@ We'd like to have:
 
 ## Decision
 
-We will build three distinct health signals: startup, readiness, liveness (Kubernetes-style probes), with answering a different question and triggering a different response, rather than one generic health check.
+We will build three distinct health signals: startup, readiness, and liveness (Kubernetes-style probes), each answering a different question and triggering a different response, rather than one generic health check.
 
 **Reasons:**
 
