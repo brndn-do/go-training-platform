@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Applies pending EF Core migrations to the database.
-# Requires `dotnet-ef` (dotnet tool install --global dotnet-ef) and EF Core
-# wiring in GoTrainingPlatform.Infrastructure (not added yet — this is a scaffold).
+# Requires `dotnet-ef` (dotnet tool install --global dotnet-ef).
+# The target database comes from GoTrainingPlatformDbContextFactory's hardcoded
+# design-time connection string, not from .env — EF tooling prefers that factory
+# over building the Api host.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

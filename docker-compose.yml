@@ -1,9 +1,5 @@
-# Scaffold only: the engine/ and backend/ Dockerfiles referenced below don't exist yet
-# (they get added later, once there's real app code to containerize). Until then,
-# `docker compose up postgres` works standalone; `up backend`/`up engine` will fail to build.
-#
+# backend/Dockerfile referenced below doesn't exist yet, so `up backend` fails to build
 # frontend/ is intentionally not a service here — run it locally with `npm run dev`
-# for fast HMR; it doesn't need containerizing for local development.
 services:
   postgres:
     image: postgres:16-alpine

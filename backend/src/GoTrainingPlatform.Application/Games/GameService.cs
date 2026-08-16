@@ -9,7 +9,7 @@ namespace GoTrainingPlatform.Application.Games;
 /// has finished, resignation semantics) is delegated to <see cref="Game"/>'s own <c>Try*</c>
 /// methods, and this class persists only on success. It has no knowledge of who's calling it
 /// (human or bot) or whether they're authorized to act as the given color; a separate
-/// orchestrator, is responsible for that sequencing and verification.
+/// orchestrator is responsible for that sequencing and verification.
 /// </summary>
 public sealed class GameService(IGameRepository gameRepository)
 {
