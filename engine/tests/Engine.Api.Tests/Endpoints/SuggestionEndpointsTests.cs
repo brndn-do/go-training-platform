@@ -37,7 +37,7 @@ public sealed class SuggestionEndpointsTests
     Assert.NotNull(suggestion.Move);
     Assert.Equal(0, suggestion.Move!.X);
     Assert.Equal(BoardSize - 1, suggestion.Move!.Y);
-    Assert.Equal(0.55, suggestion.Winrate);
+    Assert.Equal(0.55, suggestion.BlackWinRate);
   }
 
   [Fact]

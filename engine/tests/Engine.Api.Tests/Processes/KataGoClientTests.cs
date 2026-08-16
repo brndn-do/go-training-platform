@@ -23,7 +23,7 @@ public sealed class KataGoClientTests
     Assert.Equal("test", response.Id);
     Assert.False(response.IsError);
     Assert.NotNull(response.RootInfo);
-    Assert.Equal(0.5, response.RootInfo.Winrate);
+    Assert.Equal(0.5, response.RootInfo.BlackWinRate);
   }
 
   [Fact]
@@ -118,7 +118,7 @@ public sealed class KataGoClientTests
 
     Assert.Equal("test2", response2.Id);
     Assert.NotNull(response2.RootInfo);
-    Assert.Equal(0.6, response2.RootInfo.Winrate);
+    Assert.Equal(0.6, response2.RootInfo.BlackWinRate);
   }
 
   [Fact]
@@ -172,10 +172,10 @@ public sealed class KataGoClientTests
 
     Assert.Equal("test1", response1.Id);
     Assert.NotNull(response1.RootInfo);
-    Assert.Equal(0.5, response1.RootInfo.Winrate);
+    Assert.Equal(0.5, response1.RootInfo.BlackWinRate);
     Assert.Equal("test3", response3.Id);
     Assert.NotNull(response3.RootInfo);
-    Assert.Equal(0.7, response3.RootInfo.Winrate);
+    Assert.Equal(0.7, response3.RootInfo.BlackWinRate);
   }
 
   [Fact]

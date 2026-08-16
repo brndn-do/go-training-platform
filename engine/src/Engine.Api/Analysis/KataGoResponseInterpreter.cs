@@ -15,12 +15,15 @@ public static class KataGoResponseInterpreter
   /// <param name="response">The response to interpret.</param>
   /// <param name="botStrength">The bot strength.</param>
   /// <param name="random">The source of randomness used for proportional sampling at human-ranked strengths.</param>
-  /// <returns>The chosen move (<c>null</c> for pass) and the resulting win rate.</returns>
+  /// <returns>
+  /// The chosen move (<c>null</c> for pass) and the resulting estimate of Black's win
+  /// probability.
+  /// </returns>
   /// <exception cref="InvalidKataGoResponseException">
   /// Thrown when <paramref name="response"/> is an error response, or its policy, win rate, or
   /// policy length is invalid for the requested <paramref name="botStrength"/>.
   /// </exception>
-  public static (Move? Move, double Winrate) Interpret(
+  public static (Move? Move, double BlackWinRate) Interpret(
     KataGoResponse response,
     BotStrength botStrength,
     Random random)
@@ -32,14 +35,14 @@ public static class KataGoResponseInterpreter
 
     if (botStrength.IsSuperhuman)
     {
-      return Interpret(true, response.Policy, response.RootInfo?.Winrate, random);
+      return Interpret(true, response.Policy, response.RootInfo?.BlackWinRate, random);
     }
 
-    return Interpret(false, response.HumanPolicy, response.RootInfo?.HumanWinrate, random);
+    return Interpret(false, response.HumanPolicy, response.RootInfo?.HumanBlackWinRate, random);
   }
 
   // private helper, specify whether to use argmax or sample proportionally, pass in policy and win rate to use
-  private static (Move? Move, double Winrate) Interpret(
+  private static (Move? Move, double BlackWinRate) Interpret(
     bool useArgMax,
     double[]? policyToUse,
     double? winRateToUse,
