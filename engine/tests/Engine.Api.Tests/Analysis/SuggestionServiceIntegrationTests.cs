@@ -29,10 +29,10 @@ public sealed class SuggestionServiceIntegrationTests
     // Black (2,2), White passes, Black (6,6)
     IReadOnlyList<Move?> moveHistory = [new Move(2, 2), null, new Move(6, 6)];
 
-    var (move, winrate) = await service.GetSuggestionAsync(moveHistory, BoardSize, 7.5, "Superhuman")
+    var (move, blackWinRate) = await service.GetSuggestionAsync(moveHistory, BoardSize, 7.5, "Superhuman")
       .WaitAsync(_timeout);
 
-    Assert.InRange(winrate, 0.0, 1.0);
+    Assert.InRange(blackWinRate, 0.0, 1.0);
 
     if (move is not null)
     {
@@ -50,10 +50,10 @@ public sealed class SuggestionServiceIntegrationTests
 
     IReadOnlyList<Move?> moveHistory = [];
 
-    var (move, winrate) = await service.GetSuggestionAsync(moveHistory, BoardSize, 7.5, "Kyu5")
+    var (move, blackWinRate) = await service.GetSuggestionAsync(moveHistory, BoardSize, 7.5, "Kyu5")
       .WaitAsync(_timeout);
 
-    Assert.InRange(winrate, 0.0, 1.0);
+    Assert.InRange(blackWinRate, 0.0, 1.0);
 
     if (move is not null)
     {
@@ -71,10 +71,10 @@ public sealed class SuggestionServiceIntegrationTests
 
     IReadOnlyList<Move?> moveHistory = [];
 
-    var (move, winrate) = await service.GetSuggestionAsync(moveHistory, BoardSize, 7.5, "Dan5")
+    var (move, blackWinRate) = await service.GetSuggestionAsync(moveHistory, BoardSize, 7.5, "Dan5")
       .WaitAsync(_timeout);
 
-    Assert.InRange(winrate, 0.0, 1.0);
+    Assert.InRange(blackWinRate, 0.0, 1.0);
 
     if (move is not null)
     {

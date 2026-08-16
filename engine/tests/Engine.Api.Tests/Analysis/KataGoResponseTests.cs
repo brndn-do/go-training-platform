@@ -27,8 +27,8 @@ public sealed class KataGoResponseTests()
     Assert.Null(response.HumanPolicy);
 
     Assert.NotNull(response.RootInfo);
-    Assert.Equal(0.16601906, response.RootInfo.Winrate); // catches Winrate silently binding to the wrong property
-    Assert.Null(response.RootInfo.HumanWinrate);
+    Assert.Equal(0.16601906, response.RootInfo.BlackWinRate); // catches BlackWinRate silently binding to the wrong field
+    Assert.Null(response.RootInfo.HumanBlackWinRate);
   }
 
   [Fact]
@@ -49,8 +49,8 @@ public sealed class KataGoResponseTests()
     Assert.NotEqual(response.Policy[0], response.HumanPolicy[0]);
 
     Assert.NotNull(response.RootInfo);
-    Assert.NotNull(response.RootInfo.HumanWinrate);
-    Assert.NotEqual(response.RootInfo.Winrate, response.RootInfo.HumanWinrate.Value);
+    Assert.NotNull(response.RootInfo.HumanBlackWinRate);
+    Assert.NotEqual(response.RootInfo.BlackWinRate, response.RootInfo.HumanBlackWinRate.Value);
   }
 
   [Fact]

@@ -17,7 +17,10 @@ public sealed class SuggestionService(IKataGoClient kataGoClient, Random random)
   /// <param name="komi">The game's komi.</param>
   /// <param name="botStrength">The bot strength formatted as Kyu20, Dan9, Superhuman, etc.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
-  /// <returns>The suggested move (<c>null</c> for pass) and the resulting win rate.</returns>
+  /// <returns>
+  /// The suggested move (<c>null</c> for pass) and the resulting estimate of Black's win
+  /// probability.
+  /// </returns>
   /// <exception cref="ArgumentOutOfRangeException">
   /// Thrown when <paramref name="botStrength"/> is neither "Superhuman" nor a valid Kyu/Dan
   /// format (bubbles up from <see cref="BotStrength"/>'s constructor), or when
@@ -43,7 +46,7 @@ public sealed class SuggestionService(IKataGoClient kataGoClient, Random random)
     BotStrength strength = new(botStrength);
     KataGoQuery query = new(Guid.NewGuid().ToString(), moveHistory, boardSize, komi, strength);
     KataGoResponse response = await kataGoClient.QueryAsync(query, cancellationToken);
-    var (move, winrate) = KataGoResponseInterpreter.Interpret(response, strength, random);
-    return new SuggestionResponse(move, winrate);
+    var (move, blackWinRate) = KataGoResponseInterpreter.Interpret(response, strength, random);
+    return new SuggestionResponse(move, blackWinRate);
   }
 }
