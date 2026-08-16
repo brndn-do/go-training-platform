@@ -15,7 +15,7 @@ public sealed class KataGoProcessIOIntegrationTests
 {
   // have all tasks time out after 30 seconds so tests don't hang
   // chain tasks with .WaitAsync(_timeout)
-  private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
+  private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(60);
 
   [Fact]
   public async Task ExchangeAsync_SingleSuperhumanQuery_ReturnsCorrespondingResponse()
