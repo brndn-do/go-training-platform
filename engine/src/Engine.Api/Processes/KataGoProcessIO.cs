@@ -150,7 +150,7 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
   {
     ProcessStartInfo psi = new()
     {
-      FileName = options.BinaryPath,
+      FileName = options.ExecutablePath,
       RedirectStandardOutput = true,
       RedirectStandardInput = true,
       RedirectStandardError = true,

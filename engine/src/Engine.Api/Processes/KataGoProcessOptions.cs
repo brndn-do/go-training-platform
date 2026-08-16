@@ -9,7 +9,7 @@ public sealed class KataGoProcessOptions
   /// <summary>
   /// Gets or sets the path to the KataGo executable.
   /// </summary>
-  public string BinaryPath { get; set; } = string.Empty;
+  public string ExecutablePath { get; set; } = string.Empty;
 
   /// <summary>
   /// Gets or sets the path to the KataGo analysis-engine config file.

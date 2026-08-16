@@ -305,8 +305,8 @@ public sealed class KataGoProcessIOIntegrationTests
 
   private static IOptions<KataGoProcessOptions> GetProcessOptions()
   {
-    string binaryPath = Environment.GetEnvironmentVariable("KataGoProcess__BinaryPath")
-      ?? throw new InvalidOperationException("Set KataGoProcess__BinaryPath to run this test.");
+    string executablePath = Environment.GetEnvironmentVariable("KataGoProcess__ExecutablePath")
+      ?? throw new InvalidOperationException("Set KataGoProcess__ExecutablePath to run this test.");
     string modelPath = Environment.GetEnvironmentVariable("KataGoProcess__ModelPath")
       ?? throw new InvalidOperationException("Set KataGoProcess__ModelPath to run this test.");
     string humanModelPath = Environment.GetEnvironmentVariable("KataGoProcess__HumanModelPath")
@@ -316,7 +316,7 @@ public sealed class KataGoProcessIOIntegrationTests
 
     return Options.Create(new KataGoProcessOptions
     {
-      BinaryPath = binaryPath,
+      ExecutablePath = executablePath,
       ConfigPath = configPath,
       ModelPath = modelPath,
       HumanModelPath = humanModelPath,
