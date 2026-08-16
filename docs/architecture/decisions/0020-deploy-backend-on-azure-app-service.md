@@ -4,7 +4,7 @@ Date: 2026-08-15
 
 ## Status
 
-Accepted
+Superseded by [25. Deploy backend on Azure Container Apps](0025-deploy-backend-on-azure-container-apps.md)
 
 ## Context
 

@@ -8,6 +8,8 @@ Rejected
 
 Every argument in favor turned out to be either inherently modest (portability, runtime pinning) or smaller than first presented once actually examined: integration testing doesn't need the backend containerized, and the CI/CD-uniformity benefit is really just one different deploy step, not two full pipelines. Meanwhile every argument against held up: no genuine technical need and more operational overhead. See a follow-up ADR for the backend's actual deployment approach.
 
+Superseded by [24. Package backend as a Docker container](0024-package-backend-as-a-docker-container.md)
+
 ## Context
 
 The engine is already being containerized (ADR 18), driven by a technical need: a native binary with specific CPU/threading tuning that has to be pinned exactly. On the other hand, the backend has no equivalent need — it's a standard ASP.NET Core Web API with no native dependencies.
