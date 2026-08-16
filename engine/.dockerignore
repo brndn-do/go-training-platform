@@ -1,0 +1,10 @@
+# .NET build artifacts scoped to src/, not **/bin or **/obj, since katago's own
+# extracted AppImage has a real usr/bin/ and usr/lib/ that must NOT be excluded.
+src/**/bin/
+src/**/obj/
+
+# KataGo's own local log output (see go_training_platform_config.cfg).
+**/analysis_logs/
+
+# Test project
+tests/

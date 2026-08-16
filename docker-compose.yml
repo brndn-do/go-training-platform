@@ -25,10 +25,15 @@ services:
     build:
       context: ./engine
       dockerfile: Dockerfile
+    environment:
+      KataGoProcess__ExecutablePath: katago/squashfs-root/AppRun
+      KataGoProcess__ModelPath: models/kata1-zhizi-b40c768nbt-s11272M-d5935M.bin.gz
+      KataGoProcess__HumanModelPath: models/b18c384nbt-humanv0.bin.gz
+      KataGoProcess__ConfigPath: config/go_training_platform_config.cfg
     ports:
       - "${ENGINE_PORT:-5100}:8080"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
       interval: 10s
       timeout: 5s
       retries: 5
