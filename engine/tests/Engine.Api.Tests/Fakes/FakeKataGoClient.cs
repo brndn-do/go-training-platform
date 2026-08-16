@@ -2,7 +2,12 @@ using Engine.Api.Analysis;
 
 namespace Engine.Api.Tests.Fakes;
 
-public sealed class FakeKataGoClient(KataGoResponse responseToReturn, bool hasLoaded = true, TimeSpan timeSpentProcessing = default, bool hasExited = false) : IKataGoClient
+public sealed class FakeKataGoClient(
+  KataGoResponse responseToReturn,
+  bool hasLoaded = true,
+  TimeSpan timeSpentProcessing = default,
+  bool hasExited = false,
+  Exception? warmUpException = null) : IKataGoClient
 {
   public KataGoQuery? QueryReceived { get; private set; }
 
@@ -18,5 +23,6 @@ public sealed class FakeKataGoClient(KataGoResponse responseToReturn, bool hasLo
     return Task.FromResult(responseToReturn);
   }
 
-  public Task WarmUpAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+  public Task WarmUpAsync(CancellationToken cancellationToken = default) =>
+    warmUpException is null ? Task.CompletedTask : Task.FromException(warmUpException);
 }
