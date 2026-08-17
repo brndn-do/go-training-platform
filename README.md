@@ -39,7 +39,7 @@ cp .env.example .env
 ```
 Change `KataGoProcess__ExecutablePath`/`ModelPath`/`HumanModelPath`/`ConfigPath` to match where you put the files above (`ExecutablePath` → the `AppRun` from step 1), plus Postgres credentials and a `Jwt__Secret`.
 
-Then, for anything you run **locally** (not via `docker compose`) — including engine's integration tests, which spin up a real `katago` process — export these into your shell first:
+Then, for anything you run **locally** (not via `docker compose`) — including some integration tests — export these into your shell first:
 ```bash
 set -a && source .env && set +a
 ```

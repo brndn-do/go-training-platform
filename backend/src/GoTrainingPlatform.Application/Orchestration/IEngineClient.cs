@@ -19,6 +19,10 @@ public interface IEngineClient
   /// <param name="strength">The strength to answer at.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>The suggested move and win-rate estimate.</returns>
+  /// <exception cref="EngineException">
+  /// If the engine cannot be reached, rejects the request, or answers with something
+  /// that cannot be read.
+  /// </exception>
   Task<EngineSuggestion> GetSuggestionAsync(
     IReadOnlyList<Move> moveHistory,
     int boardSize,
