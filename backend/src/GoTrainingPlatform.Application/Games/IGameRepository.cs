@@ -10,7 +10,8 @@ public interface IGameRepository
   /// <summary>
   /// Loads a game by id. The returned <see cref="Game"/> has not had
   /// <see cref="Game.BuildPosition"/> called — callers must call it before
-  /// trusting <see cref="Game.Turn"/> or <see cref="Game.GetBoard"/>.
+  /// trusting <see cref="Game.Turn"/> or <see cref="Game.GetBoard"/>. The returned
+  /// moves are sorted ascending by move order.
   /// </summary>
   /// <param name="id">The game's id.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
