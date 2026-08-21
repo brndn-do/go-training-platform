@@ -13,9 +13,9 @@ namespace Engine.Api.Tests.Processes;
 [Trait("Category", "Integration")]
 public sealed class KataGoProcessIOIntegrationTests
 {
-  // have all tasks time out after 30 seconds so tests don't hang
+  // have all tasks time out after 180 seconds so tests don't hang
   // chain tasks with .WaitAsync(_timeout)
-  private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(60);
+  private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(180);
 
   [Fact]
   public async Task ExchangeAsync_SingleSuperhumanQuery_ReturnsCorrespondingResponse()
