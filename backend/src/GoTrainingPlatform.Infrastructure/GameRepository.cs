@@ -12,7 +12,7 @@ public sealed class GameRepository(GoTrainingPlatformDbContext context) : IGameR
   /// <inheritdoc/>
   public async Task<Game?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
   {
-    return await context.Games.FindAsync([id], cancellationToken);
+    return await LoadAsync(id, cancellationToken);
   }
 
   /// <inheritdoc/>
@@ -25,7 +25,7 @@ public sealed class GameRepository(GoTrainingPlatformDbContext context) : IGameR
   /// <inheritdoc/>
   public async Task SaveAsync(Game game, CancellationToken cancellationToken = default)
   {
-    var existing = await context.Games.FindAsync([game.Id], cancellationToken);
+    var existing = await LoadAsync(game.Id, cancellationToken);
 
     if (existing is null)
     {
@@ -53,5 +53,23 @@ public sealed class GameRepository(GoTrainingPlatformDbContext context) : IGameR
     }
 
     await context.SaveChangesAsync(cancellationToken);
+  }
+
+  // Both load paths go through here: EF fills a navigation once, so whichever call materializes
+  // a game first decides its move order for the rest of the context's life.
+  private async Task<Game?> LoadAsync(Guid id, CancellationToken cancellationToken)
+  {
+    // A query by id can't use the context's tracked entities the way FindAsync does, so it
+    // would re-fetch the whole move history on every call. Anything already tracked came from
+    // this method or from AddAsync, so it is already ordered.
+    Game? tracked = context.Games.Local.FirstOrDefault(game => game.Id == id);
+    if (tracked is not null)
+    {
+      return tracked;
+    }
+
+    return await context.Games
+      .Include(game => game.Moves.OrderBy(move => move.MoveNumber))
+      .FirstOrDefaultAsync(game => game.Id == id, cancellationToken);
   }
 }
