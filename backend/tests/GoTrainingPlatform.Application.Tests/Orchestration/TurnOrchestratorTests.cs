@@ -12,7 +12,7 @@ public sealed class TurnOrchestratorTests
   public async Task StartGameAsync_PlayerColorBlack_ReturnsGameAndHintWithoutBotPlay()
   {
     EngineSuggestion suggestion = new(new Coordinates(0, 0), 0.5);
-    var result = await Orch([suggestion]).StartGameAsync(Guid.NewGuid(), Color.Black, 9, BotStrength.Superhuman);
+    var result = await Orch([suggestion]).StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -28,7 +28,7 @@ public sealed class TurnOrchestratorTests
     EngineSuggestion suggestionForHuman = new(new Coordinates(1, 1), 0.5);
 
     var result = await Orch([suggestionForBot, suggestionForHuman]).
-      StartGameAsync(Guid.NewGuid(), Color.White, 9, BotStrength.Superhuman);
+      StartGameAsync(Color.White, 9, BotStrength.Superhuman);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -44,7 +44,7 @@ public sealed class TurnOrchestratorTests
     EngineSuggestion suggestionForHuman = new(new Coordinates(0, 0), 0.5);
 
     var result = await Orch([suggestionForBot, suggestionForHuman]).
-      StartGameAsync(Guid.NewGuid(), Color.White, 9, BotStrength.Superhuman);
+      StartGameAsync(Color.White, 9, BotStrength.Superhuman);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -68,11 +68,12 @@ public sealed class TurnOrchestratorTests
   {
     FakeGameRepository repository = new();
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Guid playerId = Guid.NewGuid();
+    Game game = new(gameId, playerId, Color.Black, 9, null);
     await repository.AddAsync(game);
 
     EngineSuggestion suggestion = new(new Coordinates(0, 0), 0.5);
-    var result = await Orch([suggestion], repository).LoadGameAsync(gameId);
+    var result = await Orch([suggestion], playerId, repository).LoadGameAsync(gameId);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -86,12 +87,13 @@ public sealed class TurnOrchestratorTests
   {
     FakeGameRepository repository = new();
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.White, 9, null);
+    Guid playerId = Guid.NewGuid();
+    Game game = new(gameId, playerId, Color.White, 9, null);
     await repository.AddAsync(game);
 
     EngineSuggestion suggestionForBot = new(new Coordinates(0, 0), 0.5);
     EngineSuggestion suggestionForHuman = new(new Coordinates(1, 1), 0.5);
-    var result = await Orch([suggestionForBot, suggestionForHuman], repository).LoadGameAsync(gameId);
+    var result = await Orch([suggestionForBot, suggestionForHuman], playerId, repository).LoadGameAsync(gameId);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -105,12 +107,13 @@ public sealed class TurnOrchestratorTests
   {
     FakeGameRepository repository = new();
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.White, 9, null);
+    Guid playerId = Guid.NewGuid();
+    Game game = new(gameId, playerId, Color.White, 9, null);
     await repository.AddAsync(game);
 
     EngineSuggestion suggestionForBot = new(null, 0.5);
     EngineSuggestion suggestionForHuman = new(new Coordinates(0, 0), 0.5);
-    var result = await Orch([suggestionForBot, suggestionForHuman], repository).LoadGameAsync(gameId);
+    var result = await Orch([suggestionForBot, suggestionForHuman], playerId, repository).LoadGameAsync(gameId);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -130,15 +133,35 @@ public sealed class TurnOrchestratorTests
   }
 
   [Fact]
+  public async Task MakeMoveAsync_CallerDoesNotOwnGame_ReturnsNotFoundWithoutCallingEngine()
+  {
+    FakeGameRepository repository = new();
+    Guid gameId = Guid.NewGuid();
+    Guid ownerId = Guid.NewGuid();
+    Guid otherPlayerId = Guid.NewGuid();
+    Game game = new(gameId, ownerId, Color.Black, 9, null);
+    await repository.AddAsync(game);
+
+    // an otherwise-legal move, so ownership is the only reason it can be rejected. No
+    // suggestions are supplied, so reaching the engine at all would throw.
+    var result = await Orch([], otherPlayerId, repository).MakeMoveAsync(gameId, Color.Black, 0, 0);
+
+    Assert.False(result.Success);
+    Assert.Null(result.Game);
+    Assert.Null(result.Suggestion);
+  }
+
+  [Fact]
   public async Task MakeMoveAsync_InvalidAction_ReturnsUnchangedGameWithoutSuggestion()
   {
     FakeGameRepository repository = new();
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Guid playerId = Guid.NewGuid();
+    Game game = new(gameId, playerId, Color.Black, 9, null);
     await repository.AddAsync(game);
 
     // Invalid action using the wrong turn
-    var result = await Orch([], repository).MakeMoveAsync(gameId, Color.White, 0, 0);
+    var result = await Orch([], playerId, repository).MakeMoveAsync(gameId, Color.White, 0, 0);
 
     Assert.False(result.Success);
     Assert.NotNull(result.Game);
@@ -151,12 +174,13 @@ public sealed class TurnOrchestratorTests
   {
     FakeGameRepository repository = new();
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Guid playerId = Guid.NewGuid();
+    Game game = new(gameId, playerId, Color.Black, 9, null);
     await repository.AddAsync(game);
 
     EngineSuggestion suggestionForBot = new(new Coordinates(1, 1), 0.5);
     EngineSuggestion suggestionForHuman = new(new Coordinates(2, 2), 0.5);
-    var result = await Orch([suggestionForBot, suggestionForHuman], repository).MakeMoveAsync(gameId, Color.Black, 0, 0);
+    var result = await Orch([suggestionForBot, suggestionForHuman], playerId, repository).MakeMoveAsync(gameId, Color.Black, 0, 0);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -172,12 +196,13 @@ public sealed class TurnOrchestratorTests
   {
     FakeGameRepository repository = new();
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Guid playerId = Guid.NewGuid();
+    Game game = new(gameId, playerId, Color.Black, 9, null);
     await repository.AddAsync(game);
 
     EngineSuggestion suggestionForBot = new(null, 0.5);
     EngineSuggestion suggestionForHuman = new(new Coordinates(2, 2), 0.5);
-    var result = await Orch([suggestionForBot, suggestionForHuman], repository).MakeMoveAsync(gameId, Color.Black, 0, 0);
+    var result = await Orch([suggestionForBot, suggestionForHuman], playerId, repository).MakeMoveAsync(gameId, Color.Black, 0, 0);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -202,11 +227,12 @@ public sealed class TurnOrchestratorTests
   {
     FakeGameRepository repository = new();
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Guid playerId = Guid.NewGuid();
+    Game game = new(gameId, playerId, Color.Black, 9, null);
     await repository.AddAsync(game);
 
     // Invalid action using the wrong turn
-    var result = await Orch([], repository).MakePassAsync(gameId, Color.White);
+    var result = await Orch([], playerId, repository).MakePassAsync(gameId, Color.White);
 
     Assert.False(result.Success);
     Assert.NotNull(result.Game);
@@ -219,12 +245,14 @@ public sealed class TurnOrchestratorTests
   {
     FakeGameRepository repository = new();
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Guid playerId = Guid.NewGuid();
+    Game game = new(gameId, playerId, Color.Black, 9, null);
     await repository.AddAsync(game);
 
     EngineSuggestion suggestionForBot = new(new Coordinates(1, 1), 0.5);
     EngineSuggestion suggestionForHuman = new(new Coordinates(2, 2), 0.5);
-    var result = await Orch([suggestionForBot, suggestionForHuman], repository).MakePassAsync(gameId, Color.Black);
+    var result = await Orch([suggestionForBot, suggestionForHuman], playerId, repository)
+      .MakePassAsync(gameId, Color.Black);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -240,12 +268,13 @@ public sealed class TurnOrchestratorTests
   {
     FakeGameRepository repository = new();
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Guid playerId = Guid.NewGuid();
+    Game game = new(gameId, playerId, Color.Black, 9, null);
     await repository.AddAsync(game);
 
     EngineSuggestion suggestionForBot = new(null, 0.5);
     EngineSuggestion suggestionForHuman = new(new Coordinates(2, 2), 0.5);
-    var result = await Orch([suggestionForBot, suggestionForHuman], repository).MakePassAsync(gameId, Color.Black);
+    var result = await Orch([suggestionForBot, suggestionForHuman], playerId, repository).MakePassAsync(gameId, Color.Black);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -271,11 +300,12 @@ public sealed class TurnOrchestratorTests
   {
     FakeGameRepository repository = new();
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Guid playerId = Guid.NewGuid();
+    Game game = new(gameId, playerId, Color.Black, 9, null);
     await repository.AddAsync(game);
 
     // Invalid action with nothing to undo
-    var result = await Orch([], repository).UndoAsync(gameId);
+    var result = await Orch([], playerId, repository).UndoAsync(gameId);
 
     Assert.False(result.Success);
     Assert.NotNull(result.Game);
@@ -288,12 +318,13 @@ public sealed class TurnOrchestratorTests
   {
     FakeGameRepository repository = new();
     Guid gameId = Guid.NewGuid();
+    Guid playerId = Guid.NewGuid();
     List<Move> moveHistory = [new Move(new Coordinates(0, 0), 0), new Move(new Coordinates(1, 1), 1)];
-    Game game = new(moveHistory, gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Game game = new(moveHistory, gameId, playerId, Color.Black, 9, null);
     await repository.AddAsync(game);
 
     EngineSuggestion suggestion = new(new Coordinates(2, 2), 0.5);
-    var result = await Orch([suggestion], repository).UndoAsync(gameId);
+    var result = await Orch([suggestion], playerId, repository).UndoAsync(gameId);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -317,11 +348,12 @@ public sealed class TurnOrchestratorTests
   {
     FakeGameRepository repository = new();
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, Outcome.PlayerResigned);
+    Guid playerId = Guid.NewGuid();
+    Game game = new(gameId, playerId, Color.Black, 9, Outcome.PlayerResigned);
     await repository.AddAsync(game);
 
     // Invalid action - game already finished
-    var result = await Orch([], repository).ResignAsync(gameId, Color.Black);
+    var result = await Orch([], playerId, repository).ResignAsync(gameId, Color.Black);
 
     Assert.False(result.Success);
     Assert.NotNull(result.Game);
@@ -334,11 +366,12 @@ public sealed class TurnOrchestratorTests
   {
     FakeGameRepository repository = new();
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Guid playerId = Guid.NewGuid();
+    Game game = new(gameId, playerId, Color.Black, 9, null);
     await repository.AddAsync(game);
 
     EngineSuggestion suggestion = new(new Coordinates(0, 0), 0.5);
-    var result = await Orch([suggestion], repository).ResignAsync(gameId, Color.Black);
+    var result = await Orch([suggestion], playerId, repository).ResignAsync(gameId, Color.Black);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -349,9 +382,10 @@ public sealed class TurnOrchestratorTests
   // given a list of engine suggestions, returns a fresh orchestrator that will return
   // each suggestion in its responses in order, one per call. Uses the given repository
   // if provided, so a test can seed a pre-existing game before loading it.
-  private static TurnOrchestrator Orch(IReadOnlyList<EngineSuggestion> suggestions, FakeGameRepository? repository = null)
+  private static TurnOrchestrator Orch(IReadOnlyList<EngineSuggestion> suggestions, Guid? playerId = null, FakeGameRepository? repository = null)
   {
-    GameService gameService = new(repository ?? new());
+    FakeCurrentPlayer player = new(playerId ?? Guid.NewGuid());
+    GameService gameService = new(player, repository ?? new());
     FakeEngineClient engineClient = new(suggestions);
     return new(gameService, engineClient);
   }
