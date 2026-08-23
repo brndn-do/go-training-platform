@@ -7,16 +7,16 @@ namespace GoTrainingPlatform.Application.Games;
 /// Persists <see cref="Game"/>'s use cases: start, load, and the four game-actions (move, pass,
 /// undo, resign). Deliberately thin — every rule check (turn order, legality, whether the game
 /// has finished, resignation semantics) is delegated to <see cref="Game"/>'s own <c>Try*</c>
-/// methods, and this class persists only on success. It has no knowledge of who's calling it
-/// (human or bot) or whether they're authorized to act as the given color; a separate
-/// orchestrator is responsible for that sequencing and verification.
+/// methods, and this class persists only on success. Every use case that touches an existing
+/// game requires the current player to own it, and treats a game they do not own as one that
+/// does not exist. It does not distinguish a human caller from the bot, or verify that the
+/// acting color is allowed to move; a separate orchestrator is responsible for that sequencing.
 /// </summary>
-public sealed class GameService(IGameRepository gameRepository)
+public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository gameRepository)
 {
   /// <summary>
   /// Starts a new game for a human player and persists it.
   /// </summary>
-  /// <param name="playerId">The id of the human player.</param>
   /// <param name="playerColor">The color the human player is playing as.</param>
   /// <param name="boardSize">The width and height of the (square) board.</param>
   /// <param name="botStrength">The strength of the bot for this game.</param>
@@ -27,14 +27,13 @@ public sealed class GameService(IGameRepository gameRepository)
   /// Thrown when <paramref name="boardSize"/> is not positive.
   /// </exception>
   public async Task<Game> StartGameAsync(
-    Guid playerId,
     Color playerColor,
     int boardSize,
     BotStrength botStrength,
     double komi = 7.5,
     CancellationToken cancellationToken = default)
   {
-    Game game = new(Guid.NewGuid(), playerId, playerColor, boardSize, null, komi, botStrength);
+    Game game = new(Guid.NewGuid(), currentPlayer.Id, playerColor, boardSize, null, komi, botStrength);
     game.BuildPosition();
 
     await gameRepository.AddAsync(game, cancellationToken);
@@ -47,11 +46,19 @@ public sealed class GameService(IGameRepository gameRepository)
   /// </summary>
   /// <param name="gameId">The game's id.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
-  /// <returns>The game, with its position already built, or <c>null</c> if no game with that id exists.</returns>
+  /// <returns>
+  /// The game, with its position already built, or <c>null</c> if no game with that id exists
+  /// or the current player does not own it.
+  /// </returns>
   public async Task<Game?> LoadGameAsync(Guid gameId, CancellationToken cancellationToken = default)
   {
     Game? game = await gameRepository.GetByIdAsync(gameId, cancellationToken);
-    game?.BuildPosition();
+    if (game is null || game.PlayerId != currentPlayer.Id)
+    {
+      return null;
+    }
+
+    game.BuildPosition();
     return game;
   }
 
@@ -67,7 +74,8 @@ public sealed class GameService(IGameRepository gameRepository)
   /// <param name="y">The Y coordinate of the move, zero-indexed.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>
-  /// A result with <c>Game: null</c> if no game with that id exists; otherwise the loaded
+  /// A result with <c>Game: null</c> if no game with that id exists, or the current player
+  /// does not own it; otherwise the loaded
   /// game, with <c>Success</c> reflecting whether the move was recorded and persisted.
   /// </returns>
   public async Task<GameActionResult> MakeMoveAsync(
@@ -102,7 +110,8 @@ public sealed class GameService(IGameRepository gameRepository)
   /// <param name="passingColor">The color of the player or bot attempting to pass.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>
-  /// A result with <c>Game: null</c> if no game with that id exists; otherwise the loaded
+  /// A result with <c>Game: null</c> if no game with that id exists, or the current player
+  /// does not own it; otherwise the loaded
   /// game, with <c>Success</c> reflecting whether the pass was recorded and persisted.
   /// </returns>
   public async Task<GameActionResult> MakePassAsync(
@@ -134,7 +143,8 @@ public sealed class GameService(IGameRepository gameRepository)
   /// <param name="gameId">The game's id.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>
-  /// A result with <c>Game: null</c> if no game with that id exists; otherwise the loaded
+  /// A result with <c>Game: null</c> if no game with that id exists, or the current player
+  /// does not own it; otherwise the loaded
   /// game, with <c>Success</c> reflecting whether the undo was applied and persisted.
   /// </returns>
   public async Task<GameActionResult> UndoAsync(Guid gameId, CancellationToken cancellationToken = default)
@@ -164,7 +174,8 @@ public sealed class GameService(IGameRepository gameRepository)
   /// <param name="resigningColor">The color resigning.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>
-  /// A result with <c>Game: null</c> if no game with that id exists; otherwise the loaded
+  /// A result with <c>Game: null</c> if no game with that id exists, or the current player
+  /// does not own it; otherwise the loaded
   /// game, with <c>Success</c> reflecting whether the resignation was recorded and persisted.
   /// </returns>
   public async Task<GameActionResult> ResignAsync(

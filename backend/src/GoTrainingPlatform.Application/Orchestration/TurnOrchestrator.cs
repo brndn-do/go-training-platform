@@ -14,7 +14,6 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   /// <summary>
   /// Starts a new game for a human player.
   /// </summary>
-  /// <param name="playerId">The id of the human player.</param>
   /// <param name="playerColor">The color the human player is playing as.</param>
   /// <param name="boardSize">The width and height of the (square) board.</param>
   /// <param name="botStrength">The strength of the bot for this game.</param>
@@ -25,14 +24,13 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   /// If the bot response from the engine is an invalid operation.
   /// </exception>
   public async Task<OrchestrationResult> StartGameAsync(
-    Guid playerId,
     Color playerColor,
     int boardSize,
     BotStrength botStrength,
     double komi = 7.5,
     CancellationToken cancellationToken = default)
   {
-    Game game = await gameService.StartGameAsync(playerId, playerColor, boardSize, botStrength, komi, cancellationToken);
+    Game game = await gameService.StartGameAsync(playerColor, boardSize, botStrength, komi, cancellationToken);
 
     if (game.Turn != playerColor)
     {
