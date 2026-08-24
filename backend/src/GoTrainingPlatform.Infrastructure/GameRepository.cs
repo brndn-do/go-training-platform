@@ -1,3 +1,4 @@
+using System.Data.Common;
 using GoTrainingPlatform.Application.Games;
 using GoTrainingPlatform.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -12,47 +13,104 @@ public sealed class GameRepository(GoTrainingPlatformDbContext context) : IGameR
   /// <inheritdoc/>
   public async Task<Game?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
   {
-    return await LoadAsync(id, cancellationToken);
+    try
+    {
+      return await LoadAsync(id, cancellationToken);
+    }
+    catch (Exception ex) when (Translate(ex, "Loading a game") is { } failure)
+    {
+      throw failure;
+    }
   }
 
   /// <inheritdoc/>
   public async Task AddAsync(Game game, CancellationToken cancellationToken = default)
   {
-    await context.Games.AddAsync(game, cancellationToken);
-    await context.SaveChangesAsync(cancellationToken);
+    try
+    {
+      await context.Games.AddAsync(game, cancellationToken);
+      await context.SaveChangesAsync(cancellationToken);
+    }
+    catch (Exception ex) when (Translate(ex, "Adding a game") is { } failure)
+    {
+      throw failure;
+    }
   }
 
   /// <inheritdoc/>
   public async Task SaveAsync(Game game, CancellationToken cancellationToken = default)
   {
-    var existing = await LoadAsync(game.Id, cancellationToken);
-
-    if (existing is null)
+    try
     {
-      return;
+      var existing = await LoadAsync(game.Id, cancellationToken);
+
+      if (existing is null)
+      {
+        return;
+      }
+
+      context.Entry(existing).CurrentValues.SetValues(game);
+
+      var trackedMoves = (ICollection<Move>)context.Entry(existing).Collection(nameof(Game.Moves)).CurrentValue!;
+
+      HashSet<Move> movesInExisting = [.. existing.Moves];
+      HashSet<Move> movesInGame = [.. game.Moves];
+
+      List<Move> removed = [.. movesInExisting.Except(movesInGame)];
+      List<Move> added = [.. movesInGame.Except(movesInExisting)];
+
+      foreach (var move in removed)
+      {
+        trackedMoves.Remove(move);
+      }
+
+      foreach (var move in added)
+      {
+        trackedMoves.Add(move);
+      }
+
+      await context.SaveChangesAsync(cancellationToken);
+    }
+    catch (Exception ex) when (Translate(ex, "Saving a game") is { } failure)
+    {
+      throw failure;
+    }
+  }
+
+  // Translates a store failure into a RepositoryException, or returns null for anything that
+  // is not one — the caller's exception filter then leaves it alone rather than reclassifying
+  // a programming error or a cancellation as a persistence problem.
+  private static RepositoryException? Translate(Exception exception, string operation)
+  {
+    // Npgsql reports a cancelled command as OperationCanceledException wrapping a Postgres
+    // "query_canceled" error, which is not transient. This must stay ahead of the unwrap
+    // below, or that error is found there and a disconnected client becomes a store failure.
+    if (exception is OperationCanceledException)
+    {
+      return null;
     }
 
-    context.Entry(existing).CurrentValues.SetValues(game);
-
-    var trackedMoves = (ICollection<Move>)context.Entry(existing).Collection(nameof(Game.Moves)).CurrentValue!;
-
-    HashSet<Move> movesInExisting = [.. existing.Moves];
-    HashSet<Move> movesInGame = [.. game.Moves];
-
-    List<Move> removed = [.. movesInExisting.Except(movesInGame)];
-    List<Move> added = [.. movesInGame.Except(movesInExisting)];
-
-    foreach (var move in removed)
+    // Raised by EF when the concurrency token no longer matches, does not carry a DbException.
+    if (exception is DbUpdateConcurrencyException)
     {
-      trackedMoves.Remove(move);
+      return new RepositoryException(
+        RepositoryFailureKind.Conflict,
+        $"{operation} failed: the game was changed by someone else.",
+        exception);
     }
 
-    foreach (var move in added)
+    // EF wraps a transient failure in an InvalidOperationException but lets a permanent one
+    // through untouched, so the real failure sits at either level.
+    DbException? storeFailure = exception as DbException ?? exception.InnerException as DbException;
+    if (storeFailure is null)
     {
-      trackedMoves.Add(move);
+      return null;
     }
 
-    await context.SaveChangesAsync(cancellationToken);
+    return new RepositoryException(
+      storeFailure.IsTransient ? RepositoryFailureKind.Unavailable : RepositoryFailureKind.Rejected,
+      $"{operation} failed with SQL state: ({storeFailure.SqlState ?? "no SQLSTATE"}).",
+      exception);
   }
 
   // Both load paths go through here: EF fills a navigation once, so whichever call materializes
