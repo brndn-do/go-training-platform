@@ -77,7 +77,7 @@ public sealed class GameServiceTests
   {
     var game = await _gameService.StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
 
-    var result = await _gameService.MakeMoveAsync(game.Id, Color.Black, 0, 0);
+    var result = await _gameService.MakeMoveAsync(game.Id, Actor.Human, 0, 0);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -87,9 +87,25 @@ public sealed class GameServiceTests
   }
 
   [Fact]
+  public async Task MakeMoveAsync_BotMove_RecordsMoveWithBotColor()
+  {
+    // the human plays White, so it is Black's — the bot's — turn first
+    var game = await _gameService.StartGameAsync(Color.White, 9, BotStrength.Superhuman);
+
+    var result = await _gameService.MakeMoveAsync(game.Id, Actor.Bot, 0, 0);
+
+    Assert.True(result.Success);
+    Assert.NotNull(result.Game);
+    Assert.Single(result.Game.Moves);
+    Assert.Equal(Content.Black, result.Game.GetBoard()[0, 0]);
+    Assert.Equal(Color.White, result.Game.Turn);
+    Assert.Equal(1, _repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
   public async Task MakeMoveAsync_NonExistentGame_ReturnsNotFound()
   {
-    var result = await _gameService.MakeMoveAsync(Guid.NewGuid(), Color.Black, 0, 0);
+    var result = await _gameService.MakeMoveAsync(Guid.NewGuid(), Actor.Human, 0, 0);
 
     Assert.False(result.Success);
     Assert.Null(result.Game);
@@ -99,9 +115,10 @@ public sealed class GameServiceTests
   [Fact]
   public async Task MakeMoveAsync_WrongTurn_FailsWithoutMutatingOrPersisting()
   {
-    var game = await _gameService.StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
+    // the human plays White, so it is Black's — the bot's — turn first
+    var game = await _gameService.StartGameAsync(Color.White, 9, BotStrength.Superhuman);
 
-    var result = await _gameService.MakeMoveAsync(game.Id, Color.White, 0, 0);
+    var result = await _gameService.MakeMoveAsync(game.Id, Actor.Human, 0, 0);
 
     Assert.False(result.Success);
     Assert.NotNull(result.Game);
@@ -115,7 +132,7 @@ public sealed class GameServiceTests
     var game = await _gameService.StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
 
     // an otherwise-legal move, so ownership is the only reason it can be rejected
-    var result = await ServiceForOtherPlayer().MakeMoveAsync(game.Id, Color.Black, 0, 0);
+    var result = await ServiceForOtherPlayer().MakeMoveAsync(game.Id, Actor.Human, 0, 0);
 
     Assert.False(result.Success);
     Assert.Null(result.Game);
@@ -127,7 +144,23 @@ public sealed class GameServiceTests
   {
     var game = await _gameService.StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
 
-    var result = await _gameService.MakePassAsync(game.Id, Color.Black);
+    var result = await _gameService.MakePassAsync(game.Id, Actor.Human);
+
+    Assert.True(result.Success);
+    Assert.NotNull(result.Game);
+    Assert.Single(result.Game.Moves);
+    Assert.Equal(Color.White, result.Game.Turn);
+    Assert.Null(result.Game.Outcome);
+    Assert.Equal(1, _repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
+  public async Task MakePassAsync_BotPass_SucceedsAndReturnsTurnToHuman()
+  {
+    // the human plays White, so it is Black's — the bot's — turn first
+    var game = await _gameService.StartGameAsync(Color.White, 9, BotStrength.Superhuman);
+
+    var result = await _gameService.MakePassAsync(game.Id, Actor.Bot);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -140,7 +173,7 @@ public sealed class GameServiceTests
   [Fact]
   public async Task MakePassAsync_NonExistentGame_ReturnsNotFound()
   {
-    var result = await _gameService.MakePassAsync(Guid.NewGuid(), Color.Black);
+    var result = await _gameService.MakePassAsync(Guid.NewGuid(), Actor.Human);
 
     Assert.False(result.Success);
     Assert.Null(result.Game);
@@ -150,9 +183,10 @@ public sealed class GameServiceTests
   [Fact]
   public async Task MakePassAsync_WrongTurn_FailsWithoutMutatingOrPersisting()
   {
-    var game = await _gameService.StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
+    // the human plays White, so it is Black's — the bot's — turn first
+    var game = await _gameService.StartGameAsync(Color.White, 9, BotStrength.Superhuman);
 
-    var result = await _gameService.MakePassAsync(game.Id, Color.White);
+    var result = await _gameService.MakePassAsync(game.Id, Actor.Human);
 
     Assert.False(result.Success);
     Assert.NotNull(result.Game);
@@ -166,7 +200,7 @@ public sealed class GameServiceTests
     var game = await _gameService.StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
 
     // an otherwise-legal pass, so ownership is the only reason it can be rejected
-    var result = await ServiceForOtherPlayer().MakePassAsync(game.Id, Color.Black);
+    var result = await ServiceForOtherPlayer().MakePassAsync(game.Id, Actor.Human);
 
     Assert.False(result.Success);
     Assert.Null(result.Game);
@@ -177,7 +211,7 @@ public sealed class GameServiceTests
   public async Task UndoAsync_MoveToUndo_SucceedsAndPersists()
   {
     var game = await _gameService.StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
-    Assert.True((await _gameService.MakeMoveAsync(game.Id, Color.Black, 0, 0)).Success);
+    Assert.True((await _gameService.MakeMoveAsync(game.Id, Actor.Human, 0, 0)).Success);
 
     var result = await _gameService.UndoAsync(game.Id);
 
@@ -215,7 +249,7 @@ public sealed class GameServiceTests
   public async Task UndoAsync_CallerDoesNotOwnGame_ReturnsNotFoundWithoutPersisting()
   {
     var game = await _gameService.StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
-    Assert.True((await _gameService.MakeMoveAsync(game.Id, Color.Black, 0, 0)).Success);
+    Assert.True((await _gameService.MakeMoveAsync(game.Id, Actor.Human, 0, 0)).Success);
 
     // there is a move to undo, so ownership is the only reason it can be rejected
     var result = await ServiceForOtherPlayer().UndoAsync(game.Id);
@@ -232,7 +266,7 @@ public sealed class GameServiceTests
   {
     var game = await _gameService.StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
 
-    var result = await _gameService.ResignAsync(game.Id, Color.Black);
+    var result = await _gameService.ResignAsync(game.Id, Actor.Human);
 
     Assert.True(result.Success);
     Assert.NotNull(result.Game);
@@ -241,9 +275,22 @@ public sealed class GameServiceTests
   }
 
   [Fact]
+  public async Task ResignAsync_BotResigns_RecordsBotResigned()
+  {
+    var game = await _gameService.StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
+
+    var result = await _gameService.ResignAsync(game.Id, Actor.Bot);
+
+    Assert.True(result.Success);
+    Assert.NotNull(result.Game);
+    Assert.Equal(Outcome.BotResigned, result.Game.Outcome);
+    Assert.Equal(1, _repository.SaveAsyncCallCount);
+  }
+
+  [Fact]
   public async Task ResignAsync_NonExistentGame_ReturnsNotFound()
   {
-    var result = await _gameService.ResignAsync(Guid.NewGuid(), Color.Black);
+    var result = await _gameService.ResignAsync(Guid.NewGuid(), Actor.Human);
 
     Assert.False(result.Success);
     Assert.Null(result.Game);
@@ -263,7 +310,7 @@ public sealed class GameServiceTests
     Game expected = new(gameId, _player.Id, Color.Black, 9, Outcome.PlayerResigned);
     expected.BuildPosition();
 
-    var result = await _gameService.ResignAsync(gameId, Color.Black);
+    var result = await _gameService.ResignAsync(gameId, Actor.Human);
 
     Assert.False(result.Success);
     Assert.NotNull(result.Game);
@@ -277,7 +324,7 @@ public sealed class GameServiceTests
     var game = await _gameService.StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
 
     // the game is still in progress, so ownership is the only reason it can be rejected
-    var result = await ServiceForOtherPlayer().ResignAsync(game.Id, Color.Black);
+    var result = await ServiceForOtherPlayer().ResignAsync(game.Id, Actor.Human);
 
     Assert.False(result.Success);
     Assert.Null(result.Game);

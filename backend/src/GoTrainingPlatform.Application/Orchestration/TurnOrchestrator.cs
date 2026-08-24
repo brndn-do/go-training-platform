@@ -75,11 +75,10 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   }
 
   /// <summary>
-  /// Attempts to record a stone placement for <paramref name="movingColor"/>, advancing the
+  /// Attempts to record a stone placement for the human player, advancing the
   /// bot's turn next if the move was accepted.
   /// </summary>
   /// <param name="gameId">The game's id.</param>
-  /// <param name="movingColor">The color of the human player attempting to move.</param>
   /// <param name="x">The X coordinate of the move, zero-indexed.</param>
   /// <param name="y">The Y coordinate of the move, zero-indexed.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
@@ -93,12 +92,11 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   /// </exception>
   public async Task<OrchestrationResult> MakeMoveAsync(
     Guid gameId,
-    Color movingColor,
     int x,
     int y,
     CancellationToken cancellationToken = default)
   {
-    GameActionResult actionResult = await gameService.MakeMoveAsync(gameId, movingColor, x, y, cancellationToken);
+    GameActionResult actionResult = await gameService.MakeMoveAsync(gameId, Actor.Human, x, y, cancellationToken);
     if (!actionResult.Success)
     {
       return new OrchestrationResult(actionResult.Game, false, null);
@@ -117,11 +115,10 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   }
 
   /// <summary>
-  /// Attempts to record a pass for <paramref name="passingColor"/>, advancing the bot's turn
+  /// Attempts to record a pass for the human player, advancing the bot's turn
   /// next if the pass was accepted.
   /// </summary>
   /// <param name="gameId">The game's id.</param>
-  /// <param name="passingColor">The color of the human player attempting to pass.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>
   /// A result with <c>Game: null</c> if no game with that id exists; otherwise the game, with
@@ -133,10 +130,9 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   /// </exception>
   public async Task<OrchestrationResult> MakePassAsync(
     Guid gameId,
-    Color passingColor,
     CancellationToken cancellationToken = default)
   {
-    GameActionResult actionResult = await gameService.MakePassAsync(gameId, passingColor, cancellationToken);
+    GameActionResult actionResult = await gameService.MakePassAsync(gameId, Actor.Human, cancellationToken);
     if (!actionResult.Success)
     {
       return new OrchestrationResult(actionResult.Game, false, null);
@@ -180,11 +176,10 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   }
 
   /// <summary>
-  /// Attempts to resign the game for <paramref name="resigningColor"/>. Never advances the
+  /// Attempts to resign the game for the human player. Never advances the
   /// bot's turn — resigning ends the game immediately.
   /// </summary>
   /// <param name="gameId">The game's id.</param>
-  /// <param name="resigningColor">The color resigning.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>
   /// A result with <c>Game: null</c> if no game with that id exists; otherwise the game, with
@@ -193,10 +188,9 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   /// </returns>
   public async Task<OrchestrationResult> ResignAsync(
     Guid gameId,
-    Color resigningColor,
     CancellationToken cancellationToken = default)
   {
-    GameActionResult actionResult = await gameService.ResignAsync(gameId, resigningColor, cancellationToken);
+    GameActionResult actionResult = await gameService.ResignAsync(gameId, Actor.Human, cancellationToken);
     if (!actionResult.Success)
     {
       return new OrchestrationResult(actionResult.Game, false, null);
@@ -229,8 +223,8 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
 
     GameActionResult result = await (
       coordinates is null
-      ? gameService.MakePassAsync(game.Id, game.Turn, cancellationToken)
-      : gameService.MakeMoveAsync(game.Id, game.Turn, coordinates.X, coordinates.Y, cancellationToken));
+      ? gameService.MakePassAsync(game.Id, Actor.Bot, cancellationToken)
+      : gameService.MakeMoveAsync(game.Id, Actor.Bot, coordinates.X, coordinates.Y, cancellationToken));
 
     if (!result.Success)
     {

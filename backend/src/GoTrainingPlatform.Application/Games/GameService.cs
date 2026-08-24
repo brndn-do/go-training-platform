@@ -9,8 +9,9 @@ namespace GoTrainingPlatform.Application.Games;
 /// has finished, resignation semantics) is delegated to <see cref="Game"/>'s own <c>Try*</c>
 /// methods, and this class persists only on success. Every use case that touches an existing
 /// game requires the current player to own it, and treats a game they do not own as one that
-/// does not exist. It does not distinguish a human caller from the bot, or verify that the
-/// acting color is allowed to move; a separate orchestrator is responsible for that sequencing.
+/// does not exist. The acting color is resolved from the given <see cref="Actor"/> and the
+/// game's own state, never supplied by a caller; whether that color is allowed to move is left
+/// to <see cref="Game"/>, and sequencing turns to a separate orchestrator.
 /// </summary>
 public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository gameRepository)
 {
@@ -63,13 +64,13 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
   }
 
   /// <summary>
-  /// Attempts to record a stone placement for <paramref name="movingColor"/> and persists it
+  /// Attempts to record a stone placement for <paramref name="actor"/> and persists it
   /// on success. Does not check turn order, board legality, or whether the game has finished
   /// itself — <see cref="Game.TryRecordMove"/> already owns those checks, and this method just
   /// reports whether it accepted the move.
   /// </summary>
   /// <param name="gameId">The game's id.</param>
-  /// <param name="movingColor">The color of the player or bot attempting to move.</param>
+  /// <param name="actor">Whether the human player or the bot is moving.</param>
   /// <param name="x">The X coordinate of the move, zero-indexed.</param>
   /// <param name="y">The Y coordinate of the move, zero-indexed.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
@@ -80,7 +81,7 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
   /// </returns>
   public async Task<GameActionResult> MakeMoveAsync(
     Guid gameId,
-    Color movingColor,
+    Actor actor,
     int x,
     int y,
     CancellationToken cancellationToken = default)
@@ -91,7 +92,7 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
       return new GameActionResult(null, false);
     }
 
-    bool success = game.TryRecordMove(movingColor, x, y);
+    bool success = game.TryRecordMove(GetColor(game, actor), x, y);
     if (success)
     {
       await gameRepository.SaveAsync(game, cancellationToken);
@@ -101,13 +102,13 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
   }
 
   /// <summary>
-  /// Attempts to record a pass for <paramref name="passingColor"/> and persists it on success.
+  /// Attempts to record a pass for <paramref name="actor"/> and persists it on success.
   /// Does not check turn order or whether the game has finished itself —
   /// <see cref="Game.TryRecordPass"/> already owns those checks (and may itself end the game on
   /// two consecutive passes); this method just reports whether it accepted the pass.
   /// </summary>
   /// <param name="gameId">The game's id.</param>
-  /// <param name="passingColor">The color of the player or bot attempting to pass.</param>
+  /// <param name="actor">Whether the human player or the bot is passing.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>
   /// A result with <c>Game: null</c> if no game with that id exists, or the current player
@@ -116,7 +117,7 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
   /// </returns>
   public async Task<GameActionResult> MakePassAsync(
     Guid gameId,
-    Color passingColor,
+    Actor actor,
     CancellationToken cancellationToken = default)
   {
     Game? game = await LoadGameAsync(gameId, cancellationToken);
@@ -125,7 +126,7 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
       return new GameActionResult(null, false);
     }
 
-    bool success = game.TryRecordPass(passingColor);
+    bool success = game.TryRecordPass(GetColor(game, actor));
     if (success)
     {
       await gameRepository.SaveAsync(game, cancellationToken);
@@ -165,13 +166,13 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
   }
 
   /// <summary>
-  /// Attempts to resign the game for <paramref name="resigningColor"/> and persists it on
+  /// Attempts to resign the game for <paramref name="actor"/> and persists it on
   /// success. Does not check whether the game has finished itself, and is not turn-gated —
   /// <see cref="Game.TryRecordResign"/> already owns those checks; this method just reports
   /// whether it accepted the resignation.
   /// </summary>
   /// <param name="gameId">The game's id.</param>
-  /// <param name="resigningColor">The color resigning.</param>
+  /// <param name="actor">Whether the human player or the bot is resigning.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>
   /// A result with <c>Game: null</c> if no game with that id exists, or the current player
@@ -180,7 +181,7 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
   /// </returns>
   public async Task<GameActionResult> ResignAsync(
     Guid gameId,
-    Color resigningColor,
+    Actor actor,
     CancellationToken cancellationToken = default)
   {
     Game? game = await LoadGameAsync(gameId, cancellationToken);
@@ -189,7 +190,7 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
       return new GameActionResult(null, false);
     }
 
-    bool success = game.TryRecordResign(resigningColor);
+    bool success = game.TryRecordResign(GetColor(game, actor));
     if (success)
     {
       await gameRepository.SaveAsync(game, cancellationToken);
@@ -197,4 +198,11 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
 
     return new GameActionResult(game, success);
   }
+
+  private static Color GetColor(Game game, Actor actor) => actor switch
+  {
+    Actor.Bot => game.BotColor,
+    Actor.Human => game.PlayerColor,
+    _ => throw new ArgumentOutOfRangeException(nameof(actor), actor, "Unknown actor."),
+  };
 }

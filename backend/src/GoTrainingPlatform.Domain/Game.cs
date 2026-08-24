@@ -75,6 +75,11 @@ public sealed class Game
   public Color PlayerColor { get; }
 
   /// <summary>
+  /// Gets the color the bot is playing as.
+  /// </summary>
+  public Color BotColor => PlayerColor == Color.Black ? Color.White : Color.Black;
+
+  /// <summary>
   /// Gets the color of the player whose turn it is to play.
   /// </summary>
   public Color Turn => ToColor(RequirePosition().Turn);
