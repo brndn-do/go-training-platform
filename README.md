@@ -15,7 +15,9 @@ Three independently-versioned stacks: `backend/`, `engine/`, `frontend/`. The ba
 
 ## Status
 
-Engine is functional and containerized (suggestion/hint pipeline, health checks). Backend domain/persistence layer is built and tested, but its `Api` layer (HTTP endpoints) doesn't exist yet. Frontend is an empty scaffold. Not yet a playable game end-to-end.
+Playable end to end. The backend's four layers and its seven HTTP endpoints are built and tested, the engine's suggestion/hint and health-check pipeline is functional and containerized, and a full game has been played over HTTP against real Postgres and a real engine. The frontend is still an empty scaffold.
+
+The backend only starts in the Development environment. There is no authentication yet, so the stand-in `ICurrentPlayer` is registered only under `IsDevelopment()` and startup fails anywhere else. That is deliberate, and it blocks deployment until auth ships.
 
 ## Setup
 
@@ -37,7 +39,7 @@ The `katago` binary and its neural net model files aren't in git (`engine/katago
 ```bash
 cp .env.example .env
 ```
-Change `KataGoProcess__ExecutablePath`/`ModelPath`/`HumanModelPath`/`ConfigPath` to match where you put the files above (`ExecutablePath` → the `AppRun` from step 1), plus Postgres credentials and a `Jwt__Secret`.
+Change `KataGoProcess__ExecutablePath`/`ModelPath`/`HumanModelPath`/`ConfigPath` to match where you put the files above (`ExecutablePath` → the `AppRun` from step 1), plus Postgres credentials, a `CurrentPlayer__Id` (any GUID — the backend refuses to start without one), and a `Jwt__Secret`.
 
 Then, for anything you run **locally** (not via `docker compose`) — including some integration tests — export these into your shell first:
 ```bash
@@ -56,7 +58,7 @@ scripts/dev-up.sh   # as of now, just postgres + engine, via Docker
 ```bash
 # Backend
 cd backend && dotnet run --project src/GoTrainingPlatform.Api
-dotnet test   # Domain.Tests, Application.Tests, Infrastructure.Tests (spins up its own Postgres via Testcontainers — just needs Docker running, not `dev-up.sh`)
+dotnet test   # Domain, Application, Infrastructure, and Api tests
 
 # Engine
 cd engine && dotnet test   # includes real katago integration tests — needs env vars sourced (step 2), and is slow
@@ -65,4 +67,6 @@ cd engine && dotnet test   # includes real katago integration tests — needs en
 cd frontend && npm install && npm run dev
 ```
 
-`scripts/db-migrate.sh` applies EF Core migrations. It runs against the connection string hardcoded in `GoTrainingPlatformDbContextFactory` (the design-time factory `dotnet ef` uses), not the one in your `.env` — so keep the two matching, or edit the factory. `scripts/db-reset.sh` wipes local Postgres data and re-migrates.
+`Infrastructure.Tests` provisions its own Postgres via Testcontainers, so it needs Docker running but not `dev-up.sh`. Its engine integration tests do need a running engine (`dev-up.sh`, or `dotnet run --project src/Engine.Api` from `engine/`) plus the env vars from step 2 — without both, four tests fail.
+
+`scripts/db-migrate.sh` applies EF Core migrations, against `ConnectionStrings__DefaultConnection` from your environment (step 2) — the design-time factory `dotnet ef` uses reads it from there. `scripts/db-reset.sh` wipes local Postgres data and re-migrates.
