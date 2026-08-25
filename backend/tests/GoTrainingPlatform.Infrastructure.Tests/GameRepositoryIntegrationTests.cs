@@ -7,6 +7,7 @@ namespace GoTrainingPlatform.Infrastructure.Tests;
 
 [Collection("Postgres")]
 [Trait("Category", "Integration")]
+[Trait("Requires", "Docker")]
 public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixture)
 {
   [Fact]

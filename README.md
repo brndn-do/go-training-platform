@@ -41,11 +41,11 @@ cp .env.example .env
 ```
 Change `KataGoProcess__ExecutablePath`/`ModelPath`/`HumanModelPath`/`ConfigPath` to match where you put the files above (`ExecutablePath` → the `AppRun` from step 1), plus Postgres credentials, a `CurrentPlayer__Id` (any GUID — the backend refuses to start without one), and a `Jwt__Secret`.
 
-Then, for anything you run **locally** (not via `docker compose`) — including some integration tests — export these into your shell first:
+The test suites read `.env` themselves, so they need no shell setup. Anything else you run **locally** rather than through `docker compose` — `dotnet run`, `scripts/db-migrate.sh` — still needs it exported first, per shell:
 ```bash
 set -a && source .env && set +a
 ```
-Note: must re-source every time a new shell is opened for this project. We may wish to change this later (direnv or DotNetEnv in code)
+A variable already set in your shell beats the file, so exporting one for a single command overrides it.
 
 ### 3. Bring up infra
 
@@ -58,15 +58,19 @@ scripts/dev-up.sh   # as of now, just postgres + engine, via Docker
 ```bash
 # Backend
 cd backend && dotnet run --project src/GoTrainingPlatform.Api
-dotnet test   # Domain, Application, Infrastructure, and Api tests
-
-# Engine
-cd engine && dotnet test   # includes real katago integration tests — needs env vars sourced (step 2), and is slow
 
 # Frontend
 cd frontend && npm install && npm run dev
+
+# Tests — from the repo root, no shell setup needed
+scripts/test-backend.sh --unit          # ~1s
+scripts/test-backend.sh --integration   # needs Docker, and the engine up for four of them
+scripts/test-engine.sh --unit           # ~0.4s
+scripts/test-engine.sh --integration    # needs katago from step 1
 ```
 
-`Infrastructure.Tests` provisions its own Postgres via Testcontainers, so it needs Docker running but not `dev-up.sh`. Its engine integration tests do need a running engine (`dev-up.sh`, or `dotnet run --project src/Engine.Api` from `engine/`) plus the env vars from step 2 — without both, four tests fail.
+Each script takes `--unit`, `--integration`, `--all` (the default) and `--coverage`, forwards anything else to `dotnet test`, and accepts a `.csproj` path to run one project alone.
+
+`Infrastructure.Tests` provisions its own Postgres via Testcontainers, so it needs Docker running but not `dev-up.sh`. Its engine integration tests do need a running engine (`dev-up.sh`, or `dotnet run --project src/Engine.Api` from `engine/`) — without one, four tests fail with a message saying whether it is unreachable or merely not ready yet.
 
 `scripts/db-migrate.sh` applies EF Core migrations, against `ConnectionStrings__DefaultConnection` from your environment (step 2) — the design-time factory `dotnet ef` uses reads it from there. `scripts/db-reset.sh` wipes local Postgres data and re-migrates.

@@ -6,16 +6,16 @@ namespace Engine.Api.Tests.Processes;
 
 /// <summary>
 /// Exercises <see cref="KataGoProcessIO"/> against the real, gitignored katago binary and
-/// models. Excluded from the default test run (see the "Category" trait) since those files
-/// are machine-local, not present in a fresh clone or CI. Run explicitly with:
-/// <c>dotnet test --filter "Category=Integration"</c>.
+/// models. Those files are machine-local, absent from a fresh clone and from CI, so skip
+/// these with <c>scripts/test-engine.sh --unit</c>.
 /// </summary>
 [Trait("Category", "Integration")]
+[Trait("Requires", "KataGo")]
+[Collection("KataGo")]
 public sealed class KataGoProcessIOIntegrationTests
 {
-  // have all tasks time out after 180 seconds so tests don't hang
-  // chain tasks with .WaitAsync(_timeout)
-  private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(180);
+  // have all tasks time out so tests don't hang, chain tasks with .WaitAsync(_timeout)
+  private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(60);
 
   [Fact]
   public async Task ExchangeAsync_SingleSuperhumanQuery_ReturnsCorrespondingResponse()

@@ -8,16 +8,18 @@ namespace Engine.Api.Tests.Analysis;
 /// Exercises <see cref="SuggestionService"/> against a real <see cref="KataGoClient"/> wrapping
 /// the real, gitignored katago binary and models — proving <see cref="KataGoQuery"/>'s actual
 /// serialized output is accepted by KataGo, and that <see cref="KataGoResponseInterpreter"/>
-/// correctly parses a genuine response, not a hand-typed stand-in. Excluded from the default
-/// test run (see the "Category" trait) since those files are machine-local, not present in a
-/// fresh clone or CI. Run explicitly with: <c>dotnet test --filter "Category=Integration"</c>.
+/// correctly parses a response, not a hand-typed one. The binary and models are machine-local,
+/// absent from a fresh clone and from CI, so skip these with <c>scripts/test-engine.sh --unit</c>.
 /// </summary>
 [Trait("Category", "Integration")]
+[Trait("Requires", "KataGo")]
+[Collection("KataGo")]
 public sealed class SuggestionServiceIntegrationTests
 {
   private const int BoardSize = 9;
 
-  private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
+  // have all tasks time out so tests don't hang, chain tasks with .WaitAsync(_timeout)
+  private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(60);
 
   [Fact]
   public async Task GetSuggestionAsync_SuperhumanStrengthWithMoveHistory_ReturnsLegalSuggestion()
