@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using GoTrainingPlatform.Api;
+using GoTrainingPlatform.Api.ErrorHandling;
 using GoTrainingPlatform.Application;
 using GoTrainingPlatform.Application.Games;
 using GoTrainingPlatform.Application.Orchestration;
@@ -60,7 +61,11 @@ builder.Host.UseDefaultServiceProvider((context, options) =>
   options.ValidateOnBuild = true;
 });
 
-// Add services to the container.
+// Error handling. AddProblemDetails supplies the RFC 9457 body (and its traceId) that the
+// handler writes, and that the framework falls back to for anything the handler declines.
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GameExceptionHandler>();
+
 builder.Services.AddControllers()
   .AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
@@ -69,6 +74,9 @@ builder.Services.AddControllers()
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// Must come first so it wraps everything downstream.
+app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

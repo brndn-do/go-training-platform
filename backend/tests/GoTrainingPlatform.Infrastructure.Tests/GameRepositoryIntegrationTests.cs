@@ -1,3 +1,4 @@
+using GoTrainingPlatform.Application.Games;
 using GoTrainingPlatform.Domain;
 using GoTrainingPlatform.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -136,7 +137,7 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
   }
 
   [Fact]
-  public async Task SaveAsync_Concurrent_ThrowsDbUpdateConcurrencyException()
+  public async Task SaveAsync_Concurrent_ThrowsConflict()
   {
     Guid gameId = Guid.NewGuid();
     Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
@@ -159,7 +160,11 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
     result2.TryRecordResign(Color.Black);
 
     await repo1.SaveAsync(result1);
-    await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => repo2.SaveAsync(result2));
+
+    var exception = await Assert.ThrowsAsync<RepositoryException>(
+      () => repo2.SaveAsync(result2));
+
+    Assert.Equal(RepositoryFailureKind.Conflict, exception.Kind);
   }
 
   [Fact]
@@ -208,6 +213,119 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
     Assert.Equal(
       Enumerable.Range(0, movesPerGame + extraMoves),
       result.Moves.Select(move => move.MoveNumber));
+  }
+
+  [Fact]
+  public async Task GetByIdAsync_StoreUnreachable_ThrowsUnavailable()
+  {
+    // A read reaches no server at all, so the failure is transient rather than a refusal.
+    await using var context = postgresFixture.CreateUnreachableContext();
+    GameRepository repository = new(context);
+
+    var exception = await Assert.ThrowsAsync<RepositoryException>(
+      () => repository.GetByIdAsync(Guid.NewGuid()));
+
+    Assert.Equal(RepositoryFailureKind.Unavailable, exception.Kind);
+  }
+
+  [Fact]
+  public async Task GetByIdAsync_MissingDatabase_ThrowsRejected()
+  {
+    await using var context = postgresFixture.CreateMissingDatabaseContext();
+    GameRepository repository = new(context);
+
+    var exception = await Assert.ThrowsAsync<RepositoryException>(
+      () => repository.GetByIdAsync(Guid.NewGuid()));
+
+    Assert.Equal(RepositoryFailureKind.Rejected, exception.Kind);
+  }
+
+  [Fact]
+  public async Task AddAsync_StoreUnreachable_ThrowsUnavailable()
+  {
+    await using var context = postgresFixture.CreateUnreachableContext();
+    GameRepository repository = new(context);
+
+    var exception = await Assert.ThrowsAsync<RepositoryException>(
+      () => repository.AddAsync(NewGame()));
+
+    Assert.Equal(RepositoryFailureKind.Unavailable, exception.Kind);
+  }
+
+  [Fact]
+  public async Task AddAsync_MissingDatabase_ThrowsRejected()
+  {
+    // The server answers and refuses, so the failure will not resolve on its own.
+    await using var context = postgresFixture.CreateMissingDatabaseContext();
+    GameRepository repository = new(context);
+
+    var exception = await Assert.ThrowsAsync<RepositoryException>(
+      () => repository.AddAsync(NewGame()));
+
+    Assert.Equal(RepositoryFailureKind.Rejected, exception.Kind);
+  }
+
+  [Fact]
+  public async Task SaveAsync_StoreUnreachable_ThrowsUnavailable()
+  {
+    // Fails on the read SaveAsync does before writing, so this only passes if the whole
+    // method is guarded rather than just its SaveChangesAsync call.
+    await using var context = postgresFixture.CreateUnreachableContext();
+    GameRepository repository = new(context);
+
+    var exception = await Assert.ThrowsAsync<RepositoryException>(
+      () => repository.SaveAsync(NewGame()));
+
+    Assert.Equal(RepositoryFailureKind.Unavailable, exception.Kind);
+  }
+
+  [Fact]
+  public async Task SaveAsync_MissingDatabase_ThrowsRejected()
+  {
+    await using var context = postgresFixture.CreateMissingDatabaseContext();
+    GameRepository repository = new(context);
+
+    var exception = await Assert.ThrowsAsync<RepositoryException>(
+      () => repository.SaveAsync(NewGame()));
+
+    Assert.Equal(RepositoryFailureKind.Rejected, exception.Kind);
+  }
+
+  // A cancellation must stay a cancellation and not a RepositoryException. Only a query
+  // Postgres has already started comes back as error 57014. The table lock keeps the query
+  // running until the cancellation lands. We can't cancel immediately because cancelling before
+  // the query is sent never reaches Postgres and doesn't prove that 57014 is handled correctly.
+  [Fact]
+  public async Task GetByIdAsync_CancelledMidQuery_PropagatesCancellation()
+  {
+    await using var blocked = await GamesTableLock.AcquireAsync(postgresFixture);
+
+    using CancellationTokenSource cancelling = new();
+    cancelling.CancelAfter(TimeSpan.FromMilliseconds(300));
+
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(
+      () => Repo().GetByIdAsync(Guid.NewGuid(), cancelling.Token));
+  }
+
+  [Fact]
+  public async Task SaveAsync_CancelledMidQuery_PropagatesCancellation()
+  {
+    await using var blocked = await GamesTableLock.AcquireAsync(postgresFixture);
+
+    using CancellationTokenSource cancelling = new();
+    cancelling.CancelAfter(TimeSpan.FromMilliseconds(300));
+
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(
+      () => Repo().SaveAsync(NewGame(), cancelling.Token));
+  }
+
+  // A game that is only ever handed to a repository pointed at a broken store, so it never
+  // reaches Postgres and its contents do not matter.
+  private static Game NewGame()
+  {
+    Game game = new(Guid.NewGuid(), Guid.NewGuid(), Color.Black, 9, null);
+    game.BuildPosition();
+    return game;
   }
 
   // Runs setup SQL on its own context, outside any transaction (VACUUM needs that).

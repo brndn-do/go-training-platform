@@ -23,6 +23,18 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   /// <exception cref="InvalidBotResponseException">
   /// If the bot response from the engine is an invalid operation.
   /// </exception>
+  /// <exception cref="EngineException">
+  /// If the engine cannot be reached, rejects the request, or answers with something that
+  /// cannot be read.
+  /// </exception>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>), refuses
+  /// the operation (<see cref="RepositoryFailureKind.Rejected"/>), or the game was changed by
+  /// someone else since it was loaded (<see cref="RepositoryFailureKind.Conflict"/>).
+  /// </exception>
+  /// <exception cref="ArgumentOutOfRangeException">
+  /// If <paramref name="boardSize"/> is not positive.
+  /// </exception>
   public async Task<OrchestrationResult> StartGameAsync(
     Color playerColor,
     int boardSize,
@@ -55,6 +67,15 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   /// </returns>
   /// <exception cref="InvalidBotResponseException">
   /// If the bot response from the engine is an invalid operation.
+  /// </exception>
+  /// <exception cref="EngineException">
+  /// If the engine cannot be reached, rejects the request, or answers with something that
+  /// cannot be read.
+  /// </exception>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>), refuses
+  /// the operation (<see cref="RepositoryFailureKind.Rejected"/>), or the game was changed by
+  /// someone else since it was loaded (<see cref="RepositoryFailureKind.Conflict"/>).
   /// </exception>
   public async Task<OrchestrationResult> LoadGameAsync(Guid gameId, CancellationToken cancellationToken = default)
   {
@@ -89,6 +110,15 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   /// </returns>
   /// <exception cref="InvalidBotResponseException">
   /// If the bot response from the engine is an invalid operation.
+  /// </exception>
+  /// <exception cref="EngineException">
+  /// If the engine cannot be reached, rejects the request, or answers with something that
+  /// cannot be read.
+  /// </exception>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>), refuses
+  /// the operation (<see cref="RepositoryFailureKind.Rejected"/>), or the game was changed by
+  /// someone else since it was loaded (<see cref="RepositoryFailureKind.Conflict"/>).
   /// </exception>
   public async Task<OrchestrationResult> MakeMoveAsync(
     Guid gameId,
@@ -128,6 +158,15 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   /// <exception cref="InvalidBotResponseException">
   /// If the bot response from the engine is an invalid operation.
   /// </exception>
+  /// <exception cref="EngineException">
+  /// If the engine cannot be reached, rejects the request, or answers with something that
+  /// cannot be read.
+  /// </exception>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>), refuses
+  /// the operation (<see cref="RepositoryFailureKind.Rejected"/>), or the game was changed by
+  /// someone else since it was loaded (<see cref="RepositoryFailureKind.Conflict"/>).
+  /// </exception>
   public async Task<OrchestrationResult> MakePassAsync(
     Guid gameId,
     CancellationToken cancellationToken = default)
@@ -161,6 +200,15 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   /// <c>Success</c> reflecting whether the undo was applied, and a hint for the human's next
   /// move if it was.
   /// </returns>
+  /// <exception cref="EngineException">
+  /// If the engine cannot be reached, rejects the request, or answers with something that
+  /// cannot be read.
+  /// </exception>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>), refuses
+  /// the operation (<see cref="RepositoryFailureKind.Rejected"/>), or the game was changed by
+  /// someone else since it was loaded (<see cref="RepositoryFailureKind.Conflict"/>).
+  /// </exception>
   public async Task<OrchestrationResult> UndoAsync(Guid gameId, CancellationToken cancellationToken = default)
   {
     GameActionResult actionResult = await gameService.UndoAsync(gameId, cancellationToken);
@@ -186,6 +234,15 @@ public sealed class TurnOrchestrator(GameService gameService, IEngineClient engi
   /// <c>Success</c> reflecting whether the resignation was accepted, and a final win-rate
   /// estimate if it was.
   /// </returns>
+  /// <exception cref="EngineException">
+  /// If the engine cannot be reached, rejects the request, or answers with something that
+  /// cannot be read.
+  /// </exception>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>), refuses
+  /// the operation (<see cref="RepositoryFailureKind.Rejected"/>), or the game was changed by
+  /// someone else since it was loaded (<see cref="RepositoryFailureKind.Conflict"/>).
+  /// </exception>
   public async Task<OrchestrationResult> ResignAsync(
     Guid gameId,
     CancellationToken cancellationToken = default)

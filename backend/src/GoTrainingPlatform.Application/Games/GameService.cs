@@ -24,6 +24,11 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
   /// <param name="komi">The komi to use for this game.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
   /// <returns>The newly created, persisted <see cref="Game"/>, with its position already built.</returns>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>) or
+  /// refuses the write (<see cref="RepositoryFailureKind.Rejected"/>). Never
+  /// <see cref="RepositoryFailureKind.Conflict"/>: a new game has nothing to conflict with.
+  /// </exception>
   /// <exception cref="ArgumentOutOfRangeException">
   /// Thrown when <paramref name="boardSize"/> is not positive.
   /// </exception>
@@ -51,6 +56,10 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
   /// The game, with its position already built, or <c>null</c> if no game with that id exists
   /// or the current player does not own it.
   /// </returns>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>) or
+  /// refuses the read (<see cref="RepositoryFailureKind.Rejected"/>).
+  /// </exception>
   public async Task<Game?> LoadGameAsync(Guid gameId, CancellationToken cancellationToken = default)
   {
     Game? game = await gameRepository.GetByIdAsync(gameId, cancellationToken);
@@ -79,6 +88,11 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
   /// does not own it; otherwise the loaded
   /// game, with <c>Success</c> reflecting whether the move was recorded and persisted.
   /// </returns>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>), refuses
+  /// the operation (<see cref="RepositoryFailureKind.Rejected"/>), or the game was changed by
+  /// someone else since it was loaded (<see cref="RepositoryFailureKind.Conflict"/>).
+  /// </exception>
   public async Task<GameActionResult> MakeMoveAsync(
     Guid gameId,
     Actor actor,
@@ -115,6 +129,11 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
   /// does not own it; otherwise the loaded
   /// game, with <c>Success</c> reflecting whether the pass was recorded and persisted.
   /// </returns>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>), refuses
+  /// the operation (<see cref="RepositoryFailureKind.Rejected"/>), or the game was changed by
+  /// someone else since it was loaded (<see cref="RepositoryFailureKind.Conflict"/>).
+  /// </exception>
   public async Task<GameActionResult> MakePassAsync(
     Guid gameId,
     Actor actor,
@@ -148,6 +167,11 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
   /// does not own it; otherwise the loaded
   /// game, with <c>Success</c> reflecting whether the undo was applied and persisted.
   /// </returns>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>), refuses
+  /// the operation (<see cref="RepositoryFailureKind.Rejected"/>), or the game was changed by
+  /// someone else since it was loaded (<see cref="RepositoryFailureKind.Conflict"/>).
+  /// </exception>
   public async Task<GameActionResult> UndoAsync(Guid gameId, CancellationToken cancellationToken = default)
   {
     Game? game = await LoadGameAsync(gameId, cancellationToken);
@@ -179,6 +203,11 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
   /// does not own it; otherwise the loaded
   /// game, with <c>Success</c> reflecting whether the resignation was recorded and persisted.
   /// </returns>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>), refuses
+  /// the operation (<see cref="RepositoryFailureKind.Rejected"/>), or the game was changed by
+  /// someone else since it was loaded (<see cref="RepositoryFailureKind.Conflict"/>).
+  /// </exception>
   public async Task<GameActionResult> ResignAsync(
     Guid gameId,
     Actor actor,
