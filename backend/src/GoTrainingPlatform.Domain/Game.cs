@@ -26,7 +26,7 @@ public sealed class Game
   /// <param name="outcome"><c>null</c> if still in progress; otherwise how the game ended.</param>
   /// <param name="komi">The komi to use for this game and to report to the underlying rules engine.</param>
   /// <param name="botStrength">The strength of the bot for this game.</param>
-  #pragma warning disable IDE0290 // Rich aggregate with EF Core constructor-binding history — not a fit for a primary constructor.
+#pragma warning disable IDE0290 // Rich aggregate with EF Core constructor-binding history — not a fit for a primary constructor.
   public Game(Guid id, Guid playerId, Color playerColor, int boardSize, Outcome? outcome, double komi = 7.5, BotStrength botStrength = BotStrength.Superhuman)
   {
     Id = id;
@@ -37,7 +37,7 @@ public sealed class Game
     Outcome = outcome;
     BotStrength = botStrength;
   }
-  #pragma warning restore IDE0290
+#pragma warning restore IDE0290
 
   /// <summary>
   /// Initializes a new instance of the <see cref="Game"/> class with existing move
