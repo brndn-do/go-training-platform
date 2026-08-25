@@ -38,3 +38,8 @@ generated_code = true
 # Doc analysis is intentionally off for test projects
 [**/tests/**/*.cs]
 dotnet_diagnostic.SA1600.severity = none
+
+# EF-generated migrations. EF stamps the .Designer.cs and snapshot files with an
+# auto-generated header but not the migration bodies, so those get linted.
+[backend/src/GoTrainingPlatform.Infrastructure/Migrations/*.cs]
+generated_code = true
