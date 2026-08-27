@@ -31,5 +31,3 @@ engine/**/analysis_logs/
 Thumbs.db
 .vscode/
 .idea/
-
-CLAUDE.md
