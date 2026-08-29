@@ -272,7 +272,8 @@ public sealed class GamesEndpointsTests
     {
       builder.ConfigureServices(services =>
       {
-        services.RemoveAll<GoTrainingPlatformDbContext>();
+        // The DbContext stays registered: Identity's user store depends on it, and
+        // ValidateOnBuild rejects the host without it. Nothing here connects to it.
         services.RemoveAll<IEngineClient>();
         services.RemoveAll<IGameRepository>();
         services.AddSingleton<IEngineClient>(new FakeEngineClient(suggestions));
