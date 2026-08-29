@@ -44,9 +44,14 @@ We will carry the session in an ASP.NET Core Identity authentication cookie, and
 
 The cookie is `HttpOnly` (JavaScript cannot read it), `Secure` (sent over HTTPS only), `SameSite=Lax` (not sent on requests started by other sites), and host-only (scoped to the API's exact hostname, not shared with sibling subdomains).
 
+We will defer antiforgery tokens for now, relying on `SameSite=Lax` as the CSRF mitigation until a second project or environment shares the domain.
+
 **Reasons:**
 
-- One weakness, CSRF, can be fully closed with antiforgery tokens the framework already provides — whereas a bearer token's weakness, theft via XSS, has no equivalent simple fix.
+- CSRF, the cookie's weakness, has mitigations (SameSite, CSRF tokens) that neutralize the vulnerability itself. A bearer token's weakness, theft via XSS, has no equivalent mitigation for the theft step: once JS executes, any token it can read, it can exfiltrate. Defenses only reduce the odds of XSS occurring (CSP, sanitization) or limit the blast radius afterward (short-lived tokens, in-memory storage, etc).
+- `SameSite=Lax` already blocks the requests antiforgery exists to stop.
+- Antiforgery is deferred because a sibling subdomain counting as the same site, does not exist while our domain serves only this project. The exposure is also low: no payments, and the actions an attacker could forge are moves in a practice game.
+- Adding antiforgery later is additive.
 - Identity's cookie already carries its claims, encrypted and signed. A JWT's advantage is that other services can read it, and by ADR 23 nothing else needs to.
 - Identity's security stamp revokes outstanding cookies on a credential change. Matching that with a self-contained token would mean a blocklist.
 - The SPA needs no authentication code beyond asking the browser to send credentials.
@@ -61,7 +66,7 @@ The cookie is `HttpOnly` (JavaScript cannot read it), `Secure` (sent over HTTPS 
 
 **Negative:**
 
-- CSRF is in scope, so state-changing endpoints need antiforgery tokens.
-- Hosting is constrained: the SPA and API must share a registrable domain, and requests between them need a CORS policy naming the SPA's origin with credentials allowed. Azure's default Static Web Apps and Container Apps hostnames are different sites, so neither works as-is.
+- Any subdomain added to this domain later counts as the same site, and could forge authenticated requests. Revisit antiforgery before hosting a second project or environment there.
+- The SPA and API must share a registrable domain, and requests between them need a CORS policy naming the SPA's origin with credentials allowed. Azure's default hostnames are different sites, so neither works as-is.
 - Data Protection keys must be shared and persisted across replicas, or a cookie issued by one is rejected by another and users are signed out at random.
 - A non-browser client, if added, would need a second way to authenticate.
