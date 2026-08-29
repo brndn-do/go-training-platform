@@ -12,7 +12,7 @@ Implements `Application`'s interfaces: EF Core behind `IGameRepository`, HTTP be
 - Concurrency is the `xmin` shadow property plus `IsRowVersion()`.
 - `GameRepository.SaveAsync` diffs the owned collection by hand and mutates the tracked collection — see the lessons below.
 - Both load paths go through `LoadAsync`, which checks `context.Games.Local` before querying.
-- Migrations run with **Api** as the EF startup project (`scripts/db-migrate.sh`), so they need `ASPNETCORE_ENVIRONMENT=Development` until #24. Otherwise `ValidateOnBuild` fails on `ICurrentPlayer`, and EF swallows that into a misleading `DbContextOptions` error rather than naming the cause.
+- Migrations run with **Api** as the EF startup project (`scripts/db-add-migration.sh` to generate, `scripts/db-migrate.sh` to apply), so both need `ASPNETCORE_ENVIRONMENT=Development` until #24. Otherwise `ValidateOnBuild` fails on `ICurrentPlayer`, and EF swallows that into a misleading `DbContextOptions` error rather than naming the cause.
 
 ## Failure translation
 

@@ -43,11 +43,12 @@ Open work lives in GitHub issues and ADRs.
 Each stack's commands live in its own CLAUDE.md. Root-level only:
 
 ```
-scripts/dev-up.sh         # docker compose up -d --build postgres engine — infra only for now
-scripts/db-migrate.sh     # dotnet ef database update
-scripts/db-reset.sh       # down --volumes, re-up postgres, re-migrate — destroys local data
-scripts/test-backend.sh   # --unit | --integration | --all (default), --coverage
-scripts/test-engine.sh    # --unit | --integration | --all (default), --coverage
+scripts/dev-up.sh           # docker compose up -d --build postgres engine — infra only for now
+scripts/db-add-migration.sh # dotnet ef migrations add <Name> — generates a migration, does not apply it
+scripts/db-migrate.sh       # dotnet ef database update
+scripts/db-reset.sh         # down --volumes, re-up postgres, re-migrate — destroys local data
+scripts/test-backend.sh     # --unit | --integration | --all (default), --coverage
+scripts/test-engine.sh      # --unit | --integration | --all (default), --coverage
 ```
 
 Both test scripts forward unrecognized arguments to `dotnet test`, and a `.csproj`/`.slnx` path argument overrides the stack's default solution.
