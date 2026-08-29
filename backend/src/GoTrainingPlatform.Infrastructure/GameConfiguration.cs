@@ -31,5 +31,10 @@ public sealed class GameConfiguration : IEntityTypeConfiguration<Game>
       move.Property(m => m.MoveNumber).ValueGeneratedNever();
       move.OwnsOne(m => m.Coordinates);
     });
+
+    builder.HasOne<ApplicationUser>()
+      .WithMany()
+      .HasForeignKey(game => game.PlayerId)
+      .OnDelete(DeleteBehavior.Cascade);
   }
 }

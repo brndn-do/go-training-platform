@@ -39,6 +39,8 @@ The HTTP layer and the composition root. **Controllers**, not minimal API.
 
 `ICurrentPlayer` is registered only under `IsDevelopment()`, so any other environment fails at startup. Deliberate, and stays until auth ships.
 
+`DevelopmentCurrentPlayer`'s id has no matching row in the user table, and `games.player_id` is a foreign key onto it, so game creation fails in Development. Tests cover the game loop until real auth replaces this.
+
 ## Tests
 
 `Api.Tests` uses `WebApplicationFactory` with the repository and engine faked, supplying its own configuration through `UseSetting`. It references `Application.Tests` to reuse the fakes rather than maintaining a second set.

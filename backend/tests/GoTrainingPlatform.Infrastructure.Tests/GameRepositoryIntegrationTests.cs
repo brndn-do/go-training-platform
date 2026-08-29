@@ -21,7 +21,7 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
   public async Task AddAsync_NewGame_PersistsGame()
   {
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Game game = new(gameId, postgresFixture.PlayerId, Color.Black, 9, null);
     game.BuildPosition();
 
     await Repo().AddAsync(game);
@@ -36,7 +36,7 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
   public async Task AddAsync_InProgressGame_PersistsGame()
   {
     Guid gameId = Guid.NewGuid();
-    Game game = new([new Move(new Coordinates(0, 0), 1)], gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Game game = new([new Move(new Coordinates(0, 0), 1)], gameId, postgresFixture.PlayerId, Color.Black, 9, null);
     game.BuildPosition();
 
     await Repo().AddAsync(game);
@@ -48,10 +48,21 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
   }
 
   [Fact]
+  public async Task AddAsync_NonexistentPlayerId_ThrowsRepositoryException()
+  {
+    var nonExistentPlayerId = Guid.NewGuid();
+    Game game = new(Guid.NewGuid(), nonExistentPlayerId, Color.Black, 9, null);
+    game.BuildPosition();
+
+    var exception = await Assert.ThrowsAsync<RepositoryException>(() => Repo().AddAsync(game));
+    Assert.Equal(RepositoryFailureKind.Rejected, exception.Kind);
+  }
+
+  [Fact]
   public async Task SaveAsync_AfterMove_PersistsGame()
   {
     Guid gameId = Guid.NewGuid();
-    Game newGame = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Game newGame = new(gameId, postgresFixture.PlayerId, Color.Black, 9, null);
     newGame.BuildPosition();
 
     await Repo().AddAsync(newGame);
@@ -77,7 +88,7 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
     Guid gameId = Guid.NewGuid();
 
     // Game with a move to undo
-    Game newGame = new([new Move(new Coordinates(0, 0), 1)], gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Game newGame = new([new Move(new Coordinates(0, 0), 1)], gameId, postgresFixture.PlayerId, Color.Black, 9, null);
     newGame.BuildPosition();
 
     await Repo().AddAsync(newGame);
@@ -103,7 +114,7 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
   public async Task SaveAsync_AfterManyUndosAndMoves_PersistsGame()
   {
     Guid gameId = Guid.NewGuid();
-    Game newGame = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Game newGame = new(gameId, postgresFixture.PlayerId, Color.Black, 9, null);
     newGame.BuildPosition();
 
     for (int i = 0; i < 9; i++)
@@ -141,7 +152,7 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
   public async Task SaveAsync_Concurrent_ThrowsConflict()
   {
     Guid gameId = Guid.NewGuid();
-    Game game = new(gameId, Guid.NewGuid(), Color.Black, 9, null);
+    Game game = new(gameId, postgresFixture.PlayerId, Color.Black, 9, null);
     game.BuildPosition();
 
     await Repo().AddAsync(game);
@@ -179,7 +190,7 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
 
     foreach (Guid id in new[] { gameA, gameB })
     {
-      Game game = new(id, Guid.NewGuid(), Color.Black, 19, null);
+      Game game = new(id, postgresFixture.PlayerId, Color.Black, 19, null);
       game.BuildPosition();
       await Repo().AddAsync(game);
     }

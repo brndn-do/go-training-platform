@@ -3,6 +3,7 @@ using System;
 using GoTrainingPlatform.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GoTrainingPlatform.Infrastructure.Migrations
 {
     [DbContext(typeof(GoTrainingPlatformDbContext))]
-    partial class GoTrainingPlatformDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260829224220_AddGamesPlayerIdForeignKey")]
+    partial class AddGamesPlayerIdForeignKey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

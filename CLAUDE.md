@@ -32,9 +32,11 @@ scripts/    # Dev/infra shell scripts spanning all stacks.
 
 ## Status
 
-The backend is playable but some features (auth, warmup, health checks) are incomplete. The engine is v1 complete and containerized. The frontend is an empty scaffold.
+The backend implements the full game loop but is not currently playable by hand; auth, warmup, and health checks are incomplete. The engine is v1 complete and containerized. The frontend is an empty scaffold.
 
 `ICurrentPlayer` is registered only under `IsDevelopment()`. The backend cannot run outside Development until auth ships.
+
+`games.player_id` is now a foreign key onto the user table, and nothing seeds a user matching `CurrentPlayer__Id`, so creating a game in Development fails on that constraint. Deliberate: the development player disappears when real auth lands, so the game loop is covered by tests until then.
 
 Open work lives in GitHub issues and ADRs.
 
