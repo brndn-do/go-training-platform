@@ -2,14 +2,17 @@
 
 The HTTP layer and the composition root. **Controllers**, not minimal API.
 
-- `Controllers/GamesController.cs` — seven endpoints under `api/games`. It takes the action and maps the outcome.
+- `Controllers/GamesController.cs` — the game endpoints under `api/games`. It takes the action and maps the outcome.
+- `Controllers/AuthController.cs` — register, login, and logout under `api/auth`, over Identity's `UserManager` and `SignInManager`.
 - `Contracts/` — request/response DTOs, each with a static `From(...)` mapper.
 - `ErrorHandling/GameExceptionHandler.cs` — `IExceptionHandler`.
-- `CurrentPlayerOptions`/`DevelopmentCurrentPlayer`, and `Program.cs`.
+- `HttpContextCurrentPlayer`, and `Program.cs`.
 
 ## Response mapping
 
 `OrchestrationResult` collapses to 404 (no such game, or not the current player's), 400 (rejected action, carrying no reason), or 200 — 201 plus `Location` from `Start`.
+
+`AuthController` maps Identity's results, which are returned rather than thrown. Register's failures become a 400 `ValidationProblemDetails` keyed by Identity's error codes. Every failed login becomes the same 401, so a response never says whether an account exists.
 
 ## Failure mapping
 
@@ -37,8 +40,14 @@ The HTTP layer and the composition root. **Controllers**, not minimal API.
 
 `Program.cs` runs with `ValidateScopes` and `ValidateOnBuild`, so a missing or mis-scoped registration fails at `Build()`.
 
-`ICurrentPlayer` is registered only under `IsDevelopment()`, so any other environment fails at startup. Deliberate, and stays until auth ships.
+`ICurrentPlayer` is `HttpContextCurrentPlayer`, registered scoped, reading the user id claim from the login cookie. It throws when nobody is signed in, which `MapControllers().RequireAuthorization()` rules out for any action not marked `[AllowAnonymous]`.
+
+`UseStatusCodePages()` gives bodiless error responses a `ProblemDetails` body, including the 401 for a request without a session.
 
 ## Tests
 
-`Api.Tests` uses `WebApplicationFactory` with the repository and engine faked, supplying its own configuration through `UseSetting`. It references `Application.Tests` to reuse the fakes rather than maintaining a second set.
+- `GamesEndpointsTests` uses `WebApplicationFactory` with the repository and engine faked, supplying its own configuration through `UseSetting`. `TestAuthHandler` signs every request in as one user per host.
+- `PostgresApiFixture`, shared by the `"PostgresApi"` collection, runs the real host against Testcontainers Postgres. Its clients use an `https://` base address, because the session cookie is `Secure` and would not be sent back over `http`.
+- A test that a request without a session gets 401 belongs on the real host. A test authentication scheme answers 401 by itself, so it can't catch a broken cookie configuration.
+
+`Api.Tests` references `Application.Tests` to reuse its fakes rather than maintaining a second set.

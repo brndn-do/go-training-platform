@@ -242,6 +242,28 @@ public sealed class GamesEndpointsTests
     Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
   }
 
+  [Fact]
+  public async Task Move_AnotherUsersGame_ReturnsNotFoundWithoutPersisting()
+  {
+    // Two hosts share one repository, each signed in as a different user.
+    FakeGameRepository repository = new();
+    using var ownerFactory = Factory([Hint()], repository, userId: Guid.NewGuid());
+    using var ownerClient = ownerFactory.CreateClient();
+    using var otherFactory = Factory([], repository, userId: Guid.NewGuid());
+    using var otherClient = otherFactory.CreateClient();
+    var gameId = await StartGameAsync(ownerClient);
+
+    // The owner can load it, so the 404 below comes from ownership, not a missing game.
+    Assert.Equal(HttpStatusCode.OK, (await ownerClient.GetAsync($"/api/games/{gameId}")).StatusCode);
+    int savesBefore = repository.SaveAsyncCallCount;
+
+    var response = await otherClient.PostAsJsonAsync(
+      $"/api/games/{gameId}/moves", new MoveRequest { X = 0, Y = 1 });
+
+    Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    Assert.Equal(savesBefore, repository.SaveAsyncCallCount);
+  }
+
   // A suggestion whose contents no test depends on. Away from the corner, so a bot move can
   // never collide with a point a test plays itself.
   private static EngineSuggestion Hint() => new(new Domain.Coordinates(5, 5), 0.5);
@@ -266,23 +288,35 @@ public sealed class GamesEndpointsTests
 
   private static WebApplicationFactory<Program> Factory(
     IReadOnlyList<EngineSuggestion> suggestions,
-    FakeGameRepository? repository = null) =>
-    new WebApplicationFactory<Program>()
-    .WithWebHostBuilder(builder =>
-    {
-      builder.ConfigureServices(services =>
-      {
-        services.RemoveAll<GoTrainingPlatformDbContext>();
-        services.RemoveAll<IEngineClient>();
-        services.RemoveAll<IGameRepository>();
-        services.AddSingleton<IEngineClient>(new FakeEngineClient(suggestions));
-        services.AddSingleton<IGameRepository>(repository ?? new FakeGameRepository());
-      });
+    FakeGameRepository? repository = null,
+    Guid? userId = null)
+  {
+    // Fixed for the life of the host, so a game one request starts belongs to the user
+    // making the next.
+    Guid signedInAs = userId ?? Guid.NewGuid();
 
-      // These tests never reach Postgres or the engine, but the composition root demands
-      // both before it will start.
-      builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=unused");
-      builder.UseSetting("CurrentPlayer:Id", Guid.NewGuid().ToString());
-      builder.UseSetting("Engine:BaseUrl", "http://unused");
-    });
+    return new WebApplicationFactory<Program>()
+      .WithWebHostBuilder(builder =>
+      {
+        builder.ConfigureServices(services =>
+        {
+          // The DbContext stays registered: Identity's user store depends on it, and
+          // ValidateOnBuild rejects the host without it. Nothing here connects to it.
+          services.RemoveAll<IEngineClient>();
+          services.RemoveAll<IGameRepository>();
+          services.AddSingleton<IEngineClient>(new FakeEngineClient(suggestions));
+          services.AddSingleton<IGameRepository>(repository ?? new FakeGameRepository());
+
+          services.AddAuthentication(TestAuthHandler.SchemeName)
+            .AddScheme<TestAuthOptions, TestAuthHandler>(
+              TestAuthHandler.SchemeName,
+              options => options.UserId = signedInAs);
+        });
+
+        // These tests never reach Postgres or the engine, but the composition root demands
+        // both before it will start.
+        builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=unused");
+        builder.UseSetting("Engine:BaseUrl", "http://unused");
+      });
+  }
 }

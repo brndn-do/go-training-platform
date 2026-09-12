@@ -25,6 +25,6 @@
 - A `404` covers both "no such game" and "not yours".
 - Board sizes accepted are 9, 13, and 19.
 
-## Note
+## Authentication
 
-The backend acts as one fixed player id from `CurrentPlayer__Id` in `.env`. There is no login flow to build against yet.
+Every endpoint here requires a signed-in user, and games belong to that user. See [auth.md](auth.md). A request without a session gets `401` with a problem details body.

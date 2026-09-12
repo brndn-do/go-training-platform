@@ -3,6 +3,7 @@ using System;
 using GoTrainingPlatform.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GoTrainingPlatform.Infrastructure.Migrations
 {
     [DbContext(typeof(GoTrainingPlatformDbContext))]
-    partial class GoTrainingPlatformDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260829222427_AddIdentity")]
+    partial class AddIdentity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -61,9 +64,6 @@ namespace GoTrainingPlatform.Infrastructure.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_games");
-
-                    b.HasIndex("PlayerId")
-                        .HasDatabaseName("ix_games_player_id");
 
                     b.ToTable("games", (string)null);
                 });
@@ -232,13 +232,6 @@ namespace GoTrainingPlatform.Infrastructure.Migrations
 
             modelBuilder.Entity("GoTrainingPlatform.Domain.Game", b =>
                 {
-                    b.HasOne("GoTrainingPlatform.Infrastructure.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("PlayerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_games_users_player_id");
-
                     b.OwnsMany("GoTrainingPlatform.Domain.Move", "Moves", b1 =>
                         {
                             b1.Property<Guid>("GameId")

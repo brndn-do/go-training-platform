@@ -45,9 +45,6 @@ services:
         condition: service_healthy
     environment:
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      Jwt__Secret: ${Jwt__Secret}
-      Jwt__Issuer: ${Jwt__Issuer}
-      Jwt__Audience: ${Jwt__Audience}
       Engine__BaseUrl: http://engine:8080
     ports:
       - "${BACKEND_PORT:-5000}:8080"

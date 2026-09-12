@@ -15,13 +15,13 @@ Three independently-versioned stacks: `backend/`, `engine/`, `frontend/`. The ba
 
 ## Status
 
-Playable end to end. The backend's four layers and its seven HTTP endpoints are built and tested, the engine's suggestion/hint and health-check pipeline is functional and containerized, and a full game has been played over HTTP against real Postgres and a real engine. The frontend is still an empty scaffold.
+Playable end to end. The backend's four layers and its HTTP endpoints are built and tested, the engine's suggestion/hint and health-check pipeline is functional and containerized, and a full game has been played over HTTP against real Postgres and a real engine. The frontend is still an empty scaffold.
 
-The backend only starts in the Development environment. There is no authentication yet, so the stand-in `ICurrentPlayer` is registered only under `IsDevelopment()` and startup fails anywhere else. That is deliberate, and it blocks deployment until auth ships.
+Register, login, and logout are built, and the game endpoints require a signed-in user.
 
 ## Setup
 
-**Prerequisites:** .NET 10 SDK, Node.js, Docker (with Compose).
+**Prerequisites:** .NET 10 SDK, EF Core tools, Node.js, Docker (with Compose).
 
 ### 1. Get KataGo
 
@@ -39,9 +39,9 @@ The `katago` binary and its neural net model files aren't in git (`engine/katago
 ```bash
 cp .env.example .env
 ```
-Change `KataGoProcess__ExecutablePath`/`ModelPath`/`HumanModelPath`/`ConfigPath` to match where you put the files above (`ExecutablePath` → the `AppRun` from step 1), plus Postgres credentials, a `CurrentPlayer__Id` (any GUID — the backend refuses to start without one), and a `Jwt__Secret`.
+Change `KataGoProcess__ExecutablePath`/`ModelPath`/`HumanModelPath`/`ConfigPath` to match where you put the files above (`ExecutablePath` → the `AppRun` from step 1), plus Postgres credentials.
 
-The test suites read `.env` themselves, so they need no shell setup. Anything else you run **locally** rather than through `docker compose` — `dotnet run`, `scripts/db-migrate.sh` — still needs it exported first, per shell:
+The test suites read `.env` themselves, so they need no shell setup. Anything else you run **locally** rather than through `docker compose` — `dotnet run`, `scripts/db-add-migration.sh`, `scripts/db-migrate.sh` — still needs it exported first, per shell:
 ```bash
 set -a && source .env && set +a
 ```
@@ -73,4 +73,4 @@ Each script takes `--unit`, `--integration`, `--all` (the default) and `--covera
 
 `Infrastructure.Tests` provisions its own Postgres via Testcontainers, so it needs Docker running but not `dev-up.sh`. Its engine integration tests do need a running engine (`dev-up.sh`, or `dotnet run --project src/Engine.Api` from `engine/`) — without one, four tests fail with a message saying whether it is unreachable or merely not ready yet.
 
-`scripts/db-migrate.sh` applies EF Core migrations, against `ConnectionStrings__DefaultConnection` from your environment (step 2) — the design-time factory `dotnet ef` uses reads it from there. `scripts/db-reset.sh` wipes local Postgres data and re-migrates.
+`scripts/db-add-migration.sh <Name>` generates a new EF Core migration file from the current model, without applying it. `scripts/db-migrate.sh` applies whatever migrations already exist. Both build the `Api` host to find `ConnectionStrings__DefaultConnection` and the rest of its configuration, so both need step 2's environment exported first. `scripts/db-reset.sh` wipes local Postgres data and re-migrates.
