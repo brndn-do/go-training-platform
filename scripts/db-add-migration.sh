@@ -4,8 +4,6 @@
 # Requires `dotnet-ef` (dotnet tool install --global dotnet-ef).
 # The tooling builds the Api host, so it needs the same environment Program.cs does.
 # Export it first: set -a && source .env && set +a
-# Needs ASPNETCORE_ENVIRONMENT=Development until auth is ready: ICurrentPlayer is only
-# registered there.
 #
 # Usage: scripts/db-add-migration.sh <MigrationName>
 set -euo pipefail

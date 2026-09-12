@@ -27,4 +27,4 @@
 
 ## Note
 
-The backend acts as one fixed player id from `CurrentPlayer__Id` in `.env`. There is no login flow to build against yet.
+Games belong to the signed-in user. Log in through `POST /api/auth/login` first; the session travels in a cookie. The game endpoints do not reject a request without one yet: it fails with a 500 instead of a 401.

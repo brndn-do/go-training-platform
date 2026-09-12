@@ -11,19 +11,6 @@ using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// register a fixed current player for development
-if (builder.Environment.IsDevelopment())
-{
-  builder.Services
-    .AddOptionsWithValidateOnStart<CurrentPlayerOptions>()
-    .Bind(builder.Configuration.GetSection(CurrentPlayerOptions.SectionName))
-    .Validate(
-      options => options.Id != Guid.Empty,
-      "CurrentPlayer__Id must be set to a non-empty GUID.");
-
-  builder.Services.AddSingleton<ICurrentPlayer, DevelopmentCurrentPlayer>();
-}
-
 // Database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
   ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -75,6 +62,9 @@ builder.Services.ConfigureApplicationCookie(options =>
     return Task.CompletedTask;
   };
 });
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentPlayer, HttpContextCurrentPlayer>();
 
 // Infrastructure
 builder.Services.AddScoped<IGameRepository, GameRepository>();

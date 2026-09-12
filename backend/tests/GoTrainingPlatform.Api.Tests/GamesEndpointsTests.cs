@@ -287,7 +287,6 @@ public sealed class GamesEndpointsTests
       // These tests never reach Postgres or the engine, but the composition root demands
       // both before it will start.
       builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=unused");
-      builder.UseSetting("CurrentPlayer:Id", Guid.NewGuid().ToString());
       builder.UseSetting("Engine:BaseUrl", "http://unused");
     });
 }

@@ -5,7 +5,7 @@ The HTTP layer and the composition root. **Controllers**, not minimal API.
 - `Controllers/GamesController.cs` — seven endpoints under `api/games`. It takes the action and maps the outcome.
 - `Contracts/` — request/response DTOs, each with a static `From(...)` mapper.
 - `ErrorHandling/GameExceptionHandler.cs` — `IExceptionHandler`.
-- `CurrentPlayerOptions`/`DevelopmentCurrentPlayer`, and `Program.cs`.
+- `HttpContextCurrentPlayer`, and `Program.cs`.
 
 ## Response mapping
 
@@ -37,10 +37,8 @@ The HTTP layer and the composition root. **Controllers**, not minimal API.
 
 `Program.cs` runs with `ValidateScopes` and `ValidateOnBuild`, so a missing or mis-scoped registration fails at `Build()`.
 
-`ICurrentPlayer` is registered only under `IsDevelopment()`, so any other environment fails at startup. Deliberate, and stays until auth ships.
-
-`DevelopmentCurrentPlayer`'s id has no matching row in the user table, and `games.player_id` is a foreign key onto it, so game creation fails in Development. Tests cover the game loop until real auth replaces this.
+`ICurrentPlayer` is `HttpContextCurrentPlayer`, registered scoped, reading the user id claim from the login cookie. It throws when nobody is signed in, which surfaces as a 500 until the game endpoints require authentication.
 
 ## Tests
 
-`Api.Tests` uses `WebApplicationFactory` with the repository and engine faked, supplying its own configuration through `UseSetting`. It references `Application.Tests` to reuse the fakes rather than maintaining a second set.
+`Api.Tests` uses `WebApplicationFactory` with the repository, engine, and current player faked, supplying its own configuration through `UseSetting`. It references `Application.Tests` to reuse the fakes rather than maintaining a second set.

@@ -29,8 +29,7 @@ public sealed class PostgresApiFixture : IAsyncLifetime
       {
         builder.UseSetting("ConnectionStrings:DefaultConnection", _container.GetConnectionString());
 
-        // The composition root demands both before it will start; no test here reaches them.
-        builder.UseSetting("CurrentPlayer:Id", Guid.NewGuid().ToString());
+        // The composition root demands it before it will start; no test here reaches the engine.
         builder.UseSetting("Engine:BaseUrl", "http://unused");
       });
 
