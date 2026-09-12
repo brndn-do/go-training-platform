@@ -29,7 +29,7 @@ dotnet test                     # all four test projects
 dotnet run --project src/GoTrainingPlatform.Api
 ```
 
-From the repo root, `scripts/test-backend.sh --unit` skips everything that leaves the process; `--integration` runs only those 20.
+From the repo root, `scripts/test-backend.sh --unit` skips everything that leaves the process; `--integration` runs only those.
 
 To pass the full suite: Docker running (Testcontainers), plus a running engine container for `EngineClientIntegrationTests` — its `Engine__BaseUrl` comes from the repo-root `.env`, loaded by the test assembly itself using `DotNetEnv`. Without the engine, four tests fail. A container built before an engine change still serves the old contract — rebuild with `docker compose build engine`.
 

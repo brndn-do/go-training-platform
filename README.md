@@ -15,9 +15,9 @@ Three independently-versioned stacks: `backend/`, `engine/`, `frontend/`. The ba
 
 ## Status
 
-Playable end to end. The backend's four layers and its seven HTTP endpoints are built and tested, the engine's suggestion/hint and health-check pipeline is functional and containerized, and a full game has been played over HTTP against real Postgres and a real engine. The frontend is still an empty scaffold.
+Playable end to end. The backend's four layers and its HTTP endpoints are built and tested, the engine's suggestion/hint and health-check pipeline is functional and containerized, and a full game has been played over HTTP against real Postgres and a real engine. The frontend is still an empty scaffold.
 
-Register, login, and logout are built. The game endpoints do not require authentication yet, so a request from someone not signed in fails with a 500 rather than a 401.
+Register, login, and logout are built, and the game endpoints require a signed-in user.
 
 ## Setup
 

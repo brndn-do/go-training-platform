@@ -2,12 +2,14 @@
 
 Implements `Application`'s interfaces: EF Core behind `IGameRepository`, HTTP behind `IEngineClient`.
 
-- `GoTrainingPlatformDbContext`, `GameConfiguration`, `GameRepository`, `Migrations/`.
+- `GoTrainingPlatformDbContext`, `ApplicationUser`, `GameConfiguration`, `GameRepository`, `Migrations/`.
 - `EngineClient`, `EngineOptions`, and `Engine/` — the engine's wire DTOs, kept **`internal`**. Translate to `Application` types at the boundary.
 
 ## EF Core conventions
 
 - Schema is **snake_case** via `EFCore.NamingConventions`.
+- The context is `IdentityUserContext<ApplicationUser, Guid>`: Identity's user tables, without roles. `ApplicationUser` stays in this project and never appears in an `Application` or `Domain` signature (ADR 28).
+- `games.player_id` is a foreign key onto `users`, and deleting a user deletes their games.
 - `Game` is the aggregate; `Moves` is an owned collection mapped to its own `moves` table, keyed `(GameId, MoveNumber)` with `ValueGeneratedNever()`.
 - Concurrency is the `xmin` shadow property plus `IsRowVersion()`.
 - `GameRepository.SaveAsync` diffs the owned collection by hand and mutates the tracked collection — see the lessons below.

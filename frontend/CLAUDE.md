@@ -41,4 +41,4 @@ The frontend is **not** a `docker-compose` service — run it locally.
 
 ## The API it consumes
 
-See [docs/api/games.md](../docs/api/games.md).
+See [docs/api/auth.md](../docs/api/auth.md) and [docs/api/games.md](../docs/api/games.md). Requests must include cookies (`credentials: 'include'`), and the API has no CORS policy yet (#33), so the dev server's origin can't call it until that lands.

@@ -25,6 +25,6 @@
 - A `404` covers both "no such game" and "not yours".
 - Board sizes accepted are 9, 13, and 19.
 
-## Note
+## Authentication
 
-Games belong to the signed-in user. Log in through `POST /api/auth/login` first; the session travels in a cookie. The game endpoints do not reject a request without one yet: it fails with a 500 instead of a 401.
+Every endpoint here requires a signed-in user, and games belong to that user. See [auth.md](auth.md). A request without a session gets `401` with a problem details body.

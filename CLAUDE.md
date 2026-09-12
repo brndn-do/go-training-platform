@@ -34,7 +34,7 @@ scripts/    # Dev/infra shell scripts spanning all stacks.
 
 The backend implements the full game loop, plus register, login, and logout. Warmup and health checks are incomplete. The engine is v1 complete and containerized. The frontend is an empty scaffold.
 
-`ICurrentPlayer` reads the signed-in user from the login cookie. The game endpoints do not require authentication yet, so a request from someone not signed in fails with a 500 rather than a 401.
+`ICurrentPlayer` reads the signed-in user from the login cookie. Every controller action requires one unless it is marked `[AllowAnonymous]`.
 
 Open work lives in GitHub issues and ADRs.
 
@@ -99,5 +99,5 @@ Per-stack detail is in each stack's CLAUDE.md. What holds everywhere:
 
 - Reach for hand-written fakes rather than a mocking framework as the first choice.
 - Two tags: `Category` answers _should this run here_: `Integration` marks classes that leave the process, everything else is left untagged (`Category!=Integration` matches absent traits). `Requires` answers _what must be provisioned_: `Docker` (Testcontainers for Postgres), `Engine` (a running service at `Engine__BaseUrl`), `KataGo` (gitignored binary + models).
-- Collections constrain concurrency: `"Postgres"` exists to _share_ one container fixture; `"KataGo"` exists to _serialize_ — each process is memory-hungry, and running two at once can OOM-kill them and cause flaky timeouts.
+- Collections constrain concurrency: `"Postgres"` and `"PostgresApi"` each exist to _share_ one container fixture; `"KataGo"` exists to _serialize_ — each process is memory-hungry, and running two at once can OOM-kill them and cause flaky timeouts.
 - Collections only serialize within one assembly. Running the backend and engine integration suites simultaneously still contends; so does leaving the engine container up while running engine integration tests.
