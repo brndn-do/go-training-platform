@@ -1,5 +1,6 @@
 using GoTrainingPlatform.Api.Contracts;
 using GoTrainingPlatform.Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,6 +18,7 @@ public sealed class AuthController(UserManager<ApplicationUser> userManager, Sig
   /// </summary>
   /// <param name="request">The email and password to register with.</param>
   /// <returns>No content once the account exists.</returns>
+  [AllowAnonymous]
   [HttpPost("register")]
   [ProducesResponseType(StatusCodes.Status204NoContent)]
   [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -45,6 +47,7 @@ public sealed class AuthController(UserManager<ApplicationUser> userManager, Sig
   /// </summary>
   /// <param name="request">The email and password to sign in with.</param>
   /// <returns>No content once the session cookie is issued.</returns>
+  [AllowAnonymous]
   [HttpPost("login")]
   [ProducesResponseType(StatusCodes.Status204NoContent)]
   [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -71,6 +74,7 @@ public sealed class AuthController(UserManager<ApplicationUser> userManager, Sig
   /// Signs out, clearing the session cookie. Succeeds whether or not a session existed.
   /// </summary>
   /// <returns>No content.</returns>
+  [AllowAnonymous]
   [HttpPost("logout")]
   [ProducesResponseType(StatusCodes.Status204NoContent)]
   public async Task<IActionResult> Logout()

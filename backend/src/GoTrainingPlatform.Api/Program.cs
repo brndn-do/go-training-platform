@@ -112,6 +112,8 @@ var app = builder.Build();
 // Must come first so it wraps everything downstream.
 app.UseExceptionHandler();
 
+app.UseStatusCodePages();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -123,6 +125,6 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapControllers().RequireAuthorization();
 
 app.Run();

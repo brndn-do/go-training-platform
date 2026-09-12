@@ -186,7 +186,7 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
     Assert.Null(cookie.MaxAge);
   }
 
-  [Fact(Skip = "Needs an [Authorize]-protected route to probe, which lands with piece 5.")]
+  [Fact]
   public async Task Login_WrongPassword_DoesNotAuthenticateSubsequentRequest()
   {
     string email = NewEmail();
@@ -195,13 +195,16 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
 
     var client = fixture.CreateClient();
 
-    await client.PostAsJsonAsync(
+    var loginResponse = await client.PostAsJsonAsync(
       "/api/auth/login",
       new LoginRequest { Email = email, Password = "wrong password entirely" });
 
-    // TODO: this needs an authenticated endpoint to probe with, which does not exist until
-    // [Authorize] lands. Revisit once piece 5 adds a protected route to check against.
-    Assert.Fail("TODO: deferred until an authenticated endpoint exists.");
+    Assert.Equal(HttpStatusCode.Unauthorized, loginResponse.StatusCode);
+
+    // Signed in, this would be a 404 for a game that doesn't exist.
+    var response = await client.GetAsync($"/api/games/{Guid.NewGuid()}");
+
+    Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
   }
 
   [Fact]

@@ -1,3 +1,6 @@
+using System.Net;
+using System.Net.Http.Json;
+using GoTrainingPlatform.Api.Contracts;
 using GoTrainingPlatform.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -73,6 +76,29 @@ public sealed class PostgresApiFixture : IAsyncLifetime
       BaseAddress = new Uri("https://localhost"),
       HandleCookies = false,
     });
+
+  /// <summary>
+  /// Registers a new account and signs it in.
+  /// </summary>
+  /// <returns>A client carrying that account's session cookie.</returns>
+  /// <exception cref="InvalidOperationException">Registering or signing in did not succeed.</exception>
+  public async Task<HttpClient> CreateSignedInClientAsync()
+  {
+    string email = $"{Guid.NewGuid():N}@example.com";
+    const string password = "correct horse battery staple";
+    var client = CreateClient();
+
+    var registered = await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest { Email = email, Password = password });
+    var signedIn = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = password });
+
+    if (registered.StatusCode != HttpStatusCode.NoContent || signedIn.StatusCode != HttpStatusCode.NoContent)
+    {
+      throw new InvalidOperationException(
+        $"Test setup failed: register returned {registered.StatusCode}, login returned {signedIn.StatusCode}.");
+    }
+
+    return client;
+  }
 
   /// <summary>
   /// Creates a context pointed at this fixture's container, for asserting on persisted state.
