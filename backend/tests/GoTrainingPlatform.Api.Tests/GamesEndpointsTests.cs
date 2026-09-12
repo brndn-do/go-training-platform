@@ -3,8 +3,10 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using GoTrainingPlatform.Api.Contracts;
+using GoTrainingPlatform.Application;
 using GoTrainingPlatform.Application.Games;
 using GoTrainingPlatform.Application.Orchestration;
+using GoTrainingPlatform.Application.Tests;
 using GoTrainingPlatform.Application.Tests.Games;
 using GoTrainingPlatform.Application.Tests.Orchestration;
 using GoTrainingPlatform.Domain.Enums;
@@ -276,8 +278,10 @@ public sealed class GamesEndpointsTests
         // ValidateOnBuild rejects the host without it. Nothing here connects to it.
         services.RemoveAll<IEngineClient>();
         services.RemoveAll<IGameRepository>();
+        services.RemoveAll<ICurrentPlayer>();
         services.AddSingleton<IEngineClient>(new FakeEngineClient(suggestions));
         services.AddSingleton<IGameRepository>(repository ?? new FakeGameRepository());
+        services.AddSingleton<ICurrentPlayer>(new FakeCurrentPlayer(Guid.NewGuid()));
       });
 
       // These tests never reach Postgres or the engine, but the composition root demands
