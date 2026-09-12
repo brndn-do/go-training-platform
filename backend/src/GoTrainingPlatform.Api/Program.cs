@@ -33,7 +33,7 @@ builder.Services.AddDbContext<GoTrainingPlatformDbContext>(options =>
     .UseNpgsql(connectionString)
     .UseSnakeCaseNamingConvention());
 
-// Identity. Password rules follow NIST SP 800-63B: length over composition.
+// Identity. Password and lockout rules follow NIST SP 800-63B
 builder.Services
   .AddIdentityCore<ApplicationUser>(options =>
   {
@@ -44,6 +44,9 @@ builder.Services
     options.Password.RequireNonAlphanumeric = false;
 
     options.User.RequireUniqueEmail = true;
+
+    options.Lockout.MaxFailedAccessAttempts = 100;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
   })
   .AddEntityFrameworkStores<GoTrainingPlatformDbContext>()
   .AddSignInManager();
