@@ -1,0 +1,6 @@
+# .NET build artifacts scoped to src/, matching engine/.dockerignore's convention.
+src/**/bin/
+src/**/obj/
+
+# Test project
+tests/

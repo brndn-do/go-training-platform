@@ -1,4 +1,3 @@
-# backend/Dockerfile referenced below doesn't exist yet, so `up backend` fails to build
 # frontend/ is intentionally not a service here — run it locally with `npm run dev`
 services:
   postgres:
@@ -55,6 +54,12 @@ services:
       Engine__BaseUrl: http://engine:8080
     ports:
       - "${BACKEND_PORT:-5000}:8080"
+    # Matches the Azure Container Apps Consumption plan's per-container maximum
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 8G
 
 volumes:
   postgres-data:
