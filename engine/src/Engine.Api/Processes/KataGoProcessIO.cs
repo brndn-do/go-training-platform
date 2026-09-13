@@ -16,7 +16,7 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
 
   private readonly TaskCompletionSource _processReadyTcs;
 
-  private readonly CancellationTokenSource _processExitedCts;
+  private readonly TaskCompletionSource _processExitedTcs;
 
   private bool _disposed;
 
@@ -34,9 +34,9 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
     var psi = GetProcessStartInfo(processOptions.Value);
     _process = Process.Start(psi)!;
     _process.EnableRaisingEvents = true;
-    _processExitedCts = new();
+    _processExitedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    _process.Exited += (_, e) => _processExitedCts.Cancel();
+    _process.Exited += (_, e) => _processExitedTcs.TrySetResult();
 
     try
     {
@@ -91,11 +91,11 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
   {
     ObjectDisposedException.ThrowIf(_disposed, this);
 
-    try
-    {
-      await _processReadyTcs.Task.WaitAsync(cancellationToken).WaitAsync(_processExitedCts.Token);
-    }
-    catch (OperationCanceledException ex) when (ex.CancellationToken == _processExitedCts.Token)
+    await Task.WhenAny(_processReadyTcs.Task, _processExitedTcs.Task).WaitAsync(cancellationToken);
+
+    // Checks readiness rather than which task won, so a process that became ready and later
+    // exited still counts as ready.
+    if (!_processReadyTcs.Task.IsCompleted)
     {
       throw new InvalidOperationException("The process has exited.");
     }
@@ -142,7 +142,6 @@ public sealed class KataGoProcessIO : IKataGoProcessIO, IAsyncDisposable
     }
 
     _process.Dispose();
-    _processExitedCts.Dispose();
     _disposed = true;
   }
 
