@@ -12,7 +12,7 @@ Flat, not layered. One project (`src/Engine.Api/`) with three folders, each carr
 | [src/Engine.Api/Processes/CLAUDE.md](src/Engine.Api/Processes/CLAUDE.md) | Owning and talking to the child process                     |
 | [src/Engine.Api/Endpoints/CLAUDE.md](src/Engine.Api/Endpoints/CLAUDE.md) | The minimal-API surface and the health checks               |
 
-`katago/` and `models/` are gitignored — dropped in locally per the root `README.md`. `config/` is tracked, holding the project-authored analysis-engine config.
+`katago/` and `models/` are gitignored — downloaded by hand, per the root `README.md`. `config/` is tracked, holding the project-authored analysis-engine config.
 
 ## Commands
 
@@ -33,11 +33,11 @@ The two classes that start katago share `[Collection("KataGo")]` so they never r
 Set in `config/go_training_platform_config.cfg` and assumed by the code. [README.md](README.md) covers the research behind these values and what is still unverified; the `.cfg`'s inline comments cover each setting.
 
 - `maxVisits = 1` for every strength, including the top tier — no search anywhere.
-- Two models loaded at once: a strong self-play network and a human-SL network.
+- Two models loaded at once: a strong self-play network and a human-SL network. Neither filename appears in the config, the code, or `docker-compose.yml` — all four `KataGoProcess__*` paths come from `.env`, which names the models once each.
 - One query at a time per instance: `numAnalysisThreads = 1`, `numSearchThreadsPerAnalysisThread = 1`, `nnMaxBatchSize = 1`.
 - Win rates are always Black's (`reportAnalysisWinratesAs = BLACK`). Rules are always `chinese`.
 
 ## Containerizing
 
-- The downloaded `katago` binary is an AppImage. It self-mounts via FUSE at startup, which works locally (with FUSE) but fails in a container. Fix: `./katago --appimage-extract` once, then `COPY` the extracted `squashfs-root/`. `AppRun` resolves its own location via `readlink -f`, so no code change is needed.
+- The `eigenavx2`/`eigen` Linux release binary is an AppImage. It self-mounts via FUSE at startup, which works locally (with FUSE) but fails in a container. Fix: `./katago --appimage-extract` once, then `COPY` the extracted `squashfs-root/`. `AppRun` resolves its own location via `readlink -f`, so no code change is needed.
 - Scope `.dockerignore` build-output patterns to `src/**/bin/`, not `**/bin/` (so `katago/squashfs-root/usr/bin/ isn't ignored)

@@ -65,6 +65,8 @@ set -a && source .env && set +a
 
 Machine-local or secret values (absolute paths, connection strings) come from `.env` via `IOptions<T>`, not from `appsettings.json`.
 
+`.env` interpolates: `REPO_ROOT` is the only absolute path in it, and every other path is built from that plus the KataGo asset names. Bash, Docker Compose and the test assemblies' `DotNetEnv` all expand `${...}` the same way.
+
 ## .NET conventions
 
 - Target **net10.0**; solutions are the XML `.slnx` format.

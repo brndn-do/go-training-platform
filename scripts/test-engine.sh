@@ -2,8 +2,8 @@
 # Runs the engine test suite. See scripts/lib/dotnet-test.sh for the flags.
 #   --unit         seconds, no KataGo needed
 #   --integration  needs the gitignored katago binary and models, and the paths in
-#                  .env. Slow: every test starts a real KataGo that loads ~919MB of
-#                  models.
+#                  .env. Slow: every test starts real KataGo, so the suite can take
+#                  up to several minutes.
 #
 # Don't run this at the same time as scripts/test-backend.sh --integration, and stop
 # the engine container first (docker compose stop engine) — xUnit only serialises

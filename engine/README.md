@@ -6,7 +6,7 @@ Why this service's KataGo setup looks the way it does — both `config/go_traini
 
 Every value in the file is tuned for one target:
 
-- **Eigen backend** — KataGo's pure-CPU build. There is no graphics card.
+- **Eigen backend** — KataGo's pure-CPU build. There is no graphics card. The `eigenavx2` release build is the default; plain `eigen` should be the fallback for a CPU without AVX2 + FMA.
 - **4 vCPU**, with a fixed container memory budget of **8 GB**.
 - **Azure Container Apps, Consumption plan, scaling to zero** when idle.
 
