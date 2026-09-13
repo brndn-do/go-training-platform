@@ -28,6 +28,12 @@ services:
       KataGoProcess__ConfigPath: config/go_training_platform_config.cfg
     ports:
       - "${ENGINE_PORT:-5100}:8080"
+    # Matches the Azure Container Apps Consumption plan's per-container maximum
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 8G
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
       interval: 10s
