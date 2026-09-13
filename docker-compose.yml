@@ -53,10 +53,8 @@ services:
     environment:
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       Engine__BaseUrl: http://engine:8080
-      # Until auth ships, ICurrentPlayer is registered only under IsDevelopment(), and
-      # ValidateOnBuild fails the host at Build() anywhere else.
+      # Only gates MapOpenApi() now that auth has shipped; the backend starts fine without it.
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
-      CurrentPlayer__Id: ${CurrentPlayer__Id}
     ports:
       - "${BACKEND_PORT:-5000}:8080"
 

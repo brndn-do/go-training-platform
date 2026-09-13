@@ -32,9 +32,9 @@ scripts/    # Dev/infra shell scripts spanning all stacks.
 
 ## Status
 
-The backend is playable but some features (auth, warmup, health checks) are incomplete. The engine is v1 complete and containerized. The frontend is an empty scaffold.
+The backend implements the full game loop, plus register, login, and logout. Warmup and health checks are incomplete. The engine is v1 complete and containerized. The frontend is an empty scaffold.
 
-`ICurrentPlayer` is registered only under `IsDevelopment()`. The backend cannot run outside Development until auth ships.
+`ICurrentPlayer` reads the signed-in user from the login cookie. Every controller action requires one unless it is marked `[AllowAnonymous]`.
 
 Open work lives in GitHub issues and ADRs.
 
@@ -43,11 +43,12 @@ Open work lives in GitHub issues and ADRs.
 Each stack's commands live in its own CLAUDE.md. Root-level only:
 
 ```
-scripts/dev-up.sh         # docker compose up -d --build postgres engine — infra only for now
-scripts/db-migrate.sh     # dotnet ef database update
-scripts/db-reset.sh       # down --volumes, re-up postgres, re-migrate — destroys local data
-scripts/test-backend.sh   # --unit | --integration | --all (default), --coverage
-scripts/test-engine.sh    # --unit | --integration | --all (default), --coverage
+scripts/dev-up.sh           # docker compose up -d --build postgres engine — infra only for now
+scripts/db-add-migration.sh # dotnet ef migrations add <Name> — generates a migration, does not apply it
+scripts/db-migrate.sh       # dotnet ef database update
+scripts/db-reset.sh         # down --volumes, re-up postgres, re-migrate — destroys local data
+scripts/test-backend.sh     # --unit | --integration | --all (default), --coverage
+scripts/test-engine.sh      # --unit | --integration | --all (default), --coverage
 ```
 
 Both test scripts forward unrecognized arguments to `dotnet test`, and a `.csproj`/`.slnx` path argument overrides the stack's default solution.
@@ -98,5 +99,5 @@ Per-stack detail is in each stack's CLAUDE.md. What holds everywhere:
 
 - Reach for hand-written fakes rather than a mocking framework as the first choice.
 - Two tags: `Category` answers _should this run here_: `Integration` marks classes that leave the process, everything else is left untagged (`Category!=Integration` matches absent traits). `Requires` answers _what must be provisioned_: `Docker` (Testcontainers for Postgres), `Engine` (a running service at `Engine__BaseUrl`), `KataGo` (gitignored binary + models).
-- Collections constrain concurrency: `"Postgres"` exists to _share_ one container fixture; `"KataGo"` exists to _serialize_ — each process is memory-hungry, and running two at once can OOM-kill them and cause flaky timeouts.
+- Collections constrain concurrency: `"Postgres"` and `"PostgresApi"` each exist to _share_ one container fixture; `"KataGo"` exists to _serialize_ — each process is memory-hungry, and running two at once can OOM-kill them and cause flaky timeouts.
 - Collections only serialize within one assembly. Running the backend and engine integration suites simultaneously still contends; so does leaving the engine container up while running engine integration tests.

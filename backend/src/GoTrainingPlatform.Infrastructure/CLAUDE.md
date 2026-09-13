@@ -2,17 +2,19 @@
 
 Implements `Application`'s interfaces: EF Core behind `IGameRepository`, HTTP behind `IEngineClient`.
 
-- `GoTrainingPlatformDbContext`, `GameConfiguration`, `GameRepository`, `Migrations/`.
+- `GoTrainingPlatformDbContext`, `ApplicationUser`, `GameConfiguration`, `GameRepository`, `Migrations/`.
 - `EngineClient`, `EngineOptions`, and `Engine/` — the engine's wire DTOs, kept **`internal`**. Translate to `Application` types at the boundary.
 
 ## EF Core conventions
 
 - Schema is **snake_case** via `EFCore.NamingConventions`.
+- The context is `IdentityUserContext<ApplicationUser, Guid>`: Identity's user tables, without roles. `ApplicationUser` stays in this project and never appears in an `Application` or `Domain` signature (ADR 28).
+- `games.player_id` is a foreign key onto `users`, and deleting a user deletes their games.
 - `Game` is the aggregate; `Moves` is an owned collection mapped to its own `moves` table, keyed `(GameId, MoveNumber)` with `ValueGeneratedNever()`.
 - Concurrency is the `xmin` shadow property plus `IsRowVersion()`.
 - `GameRepository.SaveAsync` diffs the owned collection by hand and mutates the tracked collection — see the lessons below.
 - Both load paths go through `LoadAsync`, which checks `context.Games.Local` before querying.
-- Migrations run with **Api** as the EF startup project (`scripts/db-migrate.sh`), so they need `ASPNETCORE_ENVIRONMENT=Development` until #24. Otherwise `ValidateOnBuild` fails on `ICurrentPlayer`, and EF swallows that into a misleading `DbContextOptions` error rather than naming the cause.
+- Migrations run with **Api** as the EF startup project (`scripts/db-add-migration.sh` to generate, `scripts/db-migrate.sh` to apply), so they build the full host. If it fails to build — for example `ValidateOnBuild` rejecting a registration — EF swallows that into a misleading `DbContextOptions` error rather than naming the cause.
 
 ## Failure translation
 
@@ -32,6 +34,7 @@ Implements `Application`'s interfaces: EF Core behind `IGameRepository`, HTTP be
 
 - EF Core can **never** constructor-bind a navigation property — a collection or an owned reference — however the constructor is shaped. Navigations are filled in after construction, so a rich-constructor entity still needs an all-scalar path available to it.
 - A **get-only property needs an explicit `builder.Property(...)`** before convention-based discovery finds it, even when a constructor parameter matches its name and type exactly.
-- **Explicit configuration bypasses naming conventions entirely** (e.g. `ToTable(...)`), so one stray mis-cased table can slip into an otherwise-consistent schema. Composite key members aren't exempt from value-generation conventions either.
+- **Explicit configuration bypasses naming conventions entirely** (e.g. `ToTable(...)`), so one stray mis-cased table can slip into an otherwise-consistent schema. Composite key members aren't exempt from value-generation conventions either. Identity's own `OnModelCreating` is an instance of this: it names its tables `AspNetUsers` and friends, which `UseSnakeCaseNamingConvention()` leaves alone even though it does rewrite their columns, keys, and indexes. `GoTrainingPlatformDbContext` renames them explicitly after calling `base`.
+- **Deleting a migration file by hand leaves the model snapshot ahead of it**, so the next `migrations add` emits a diff against the stale snapshot — a pile of renames rather than the clean migration expected. Use `dotnet ef migrations remove`, which reverts the snapshot too.
 - **`CurrentValues.SetValues(...)` reconciles scalars and owned _references_ but silently skips owned _collections_.** Those need diffing and mutating the tracked collection directly.
 - **A model compiling, or a migration generating, proves nothing about materialization.** Check with a real `dotnet ef database update` or a load-and-check round trip — and use a fresh `DbContext` for the checking read, since a reused one's identity map hides real persistence bugs behind a passing test.

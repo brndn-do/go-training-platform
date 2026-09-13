@@ -15,6 +15,12 @@ public sealed class PostgresFixture : IAsyncLifetime
 {
   private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:16-alpine").Build();
 
+  /// <summary>
+  /// Gets the id of a user seeded into this fixture's database. A game's <c>PlayerId</c> is a
+  /// foreign key onto the user table, so persisting one requires an id that exists there.
+  /// </summary>
+  public Guid PlayerId { get; } = Guid.NewGuid();
+
   /// <inheritdoc/>
   public async Task InitializeAsync()
   {
@@ -22,6 +28,9 @@ public sealed class PostgresFixture : IAsyncLifetime
 
     await using var context = CreateContext();
     await context.Database.MigrateAsync();
+
+    context.Users.Add(new ApplicationUser { Id = PlayerId, UserName = "integration-tests" });
+    await context.SaveChangesAsync();
   }
 
   /// <inheritdoc/>

@@ -29,4 +29,4 @@ Hand-written fakes: `FakeGameRepository`, `FakeEngineClient`, `FakeCurrentPlayer
 
 Asserts `FakeGameRepository.SaveAsyncCallCount` to test that a write happened.
 
-This project is referenced by `Api.Tests`, which reuses these fakes. Changing one affects both suites.
+This project is referenced by `Api.Tests`, which reuses `FakeGameRepository` and `FakeEngineClient`. Changing one affects both suites.

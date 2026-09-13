@@ -5,23 +5,11 @@ using GoTrainingPlatform.Application;
 using GoTrainingPlatform.Application.Games;
 using GoTrainingPlatform.Application.Orchestration;
 using GoTrainingPlatform.Infrastructure;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// register a fixed current player for development
-if (builder.Environment.IsDevelopment())
-{
-  builder.Services
-    .AddOptionsWithValidateOnStart<CurrentPlayerOptions>()
-    .Bind(builder.Configuration.GetSection(CurrentPlayerOptions.SectionName))
-    .Validate(
-      options => options.Id != Guid.Empty,
-      "CurrentPlayer__Id must be set to a non-empty GUID.");
-
-  builder.Services.AddSingleton<ICurrentPlayer, DevelopmentCurrentPlayer>();
-}
 
 // Database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -31,6 +19,52 @@ builder.Services.AddDbContext<GoTrainingPlatformDbContext>(options =>
   options
     .UseNpgsql(connectionString)
     .UseSnakeCaseNamingConvention());
+
+// Identity. Password and lockout rules follow NIST SP 800-63B
+builder.Services
+  .AddIdentityCore<ApplicationUser>(options =>
+  {
+    options.Password.RequiredLength = 8;
+    options.Password.RequireDigit = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+
+    options.User.RequireUniqueEmail = true;
+
+    options.Lockout.MaxFailedAccessAttempts = 100;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+  })
+  .AddEntityFrameworkStores<GoTrainingPlatformDbContext>()
+  .AddSignInManager();
+
+builder.Services
+  .AddAuthentication(IdentityConstants.ApplicationScheme)
+  .AddIdentityCookies();
+
+// ADR 29: the session rides in this cookie, first-party to the API's own hostname.
+builder.Services.ConfigureApplicationCookie(options =>
+{
+  options.Cookie.HttpOnly = true;
+  options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+  options.Cookie.SameSite = SameSiteMode.Lax;
+
+  // Identity's handler redirects to a login page by default. An API answers with a status.
+  options.Events.OnRedirectToLogin = context =>
+  {
+    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+    return Task.CompletedTask;
+  };
+
+  options.Events.OnRedirectToAccessDenied = context =>
+  {
+    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+    return Task.CompletedTask;
+  };
+});
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentPlayer, HttpContextCurrentPlayer>();
 
 // Infrastructure
 builder.Services.AddScoped<IGameRepository, GameRepository>();
@@ -78,6 +112,8 @@ var app = builder.Build();
 // Must come first so it wraps everything downstream.
 app.UseExceptionHandler();
 
+app.UseStatusCodePages();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -86,8 +122,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapControllers().RequireAuthorization();
 
 app.Run();
