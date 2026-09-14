@@ -14,6 +14,8 @@ public sealed class FakeEngineClient(IReadOnlyList<EngineSuggestion> suggestions
 {
   public int CallCount { get; private set; }
 
+  public int WarmUpCallCount { get; private set; }
+
   /// <inheritdoc/>
   public Task<EngineSuggestion> GetSuggestionAsync(
     IReadOnlyList<Move> moveHistory,
@@ -26,5 +28,12 @@ public sealed class FakeEngineClient(IReadOnlyList<EngineSuggestion> suggestions
     var result = Task.FromResult(suggestions[CallCount]);
     CallCount += 1;
     return result;
+  }
+
+  /// <inheritdoc/>
+  public Task WarmUpAsync(CancellationToken cancellationToken = default)
+  {
+    WarmUpCallCount += 1;
+    return Task.CompletedTask;
   }
 }

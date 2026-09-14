@@ -3,7 +3,7 @@
 Implements `Application`'s interfaces: EF Core behind `IGameRepository`, HTTP behind `IEngineClient`.
 
 - `GoTrainingPlatformDbContext`, `ApplicationUser`, `GameConfiguration`, `GameRepository`, `Migrations/`.
-- `EngineClient`, `EngineOptions`, and `Engine/` — the engine's wire DTOs, kept **`internal`**. Translate to `Application` types at the boundary.
+- `EngineClient`, `EngineOptions`, and `Engine/` — the engine's wire DTOs, kept **`internal`**. Translate to `Application` types at the boundary. `EngineClient` funnels both endpoints through one `TranslateFailuresAsync` helper, so `/suggestion` and `/warmup` fail identically; `/warmup` stops at the response headers, since its status code is its whole contract.
 
 ## EF Core conventions
 
@@ -26,7 +26,7 @@ Implements `Application`'s interfaces: EF Core behind `IGameRepository`, HTTP be
 
 - `PostgresFixture` is shared across the `"Postgres"` collection and hands out a **fresh** `DbContext` per call.
 - It also builds deliberately-broken contexts (`CreateUnreachableContext`, `CreateMissingDatabaseContext`) covering both sides of the transient/permanent split.
-- `EngineClientIntegrationTests` needs a running engine; `Engine__BaseUrl` comes from the repo-root `.env`, which the test assembly loads itself. Without the engine, four tests fail, and the message distinguishes unreachable from running-but-not-ready.
+- `EngineClientIntegrationTests` needs a running engine; `Engine__BaseUrl` comes from the repo-root `.env`, which the test assembly loads itself. Without the engine, five tests fail, and the message distinguishes unreachable from running-but-not-ready.
 
 ## Lessons likely to recur
 

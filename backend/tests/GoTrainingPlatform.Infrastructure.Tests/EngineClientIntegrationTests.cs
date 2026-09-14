@@ -75,6 +75,17 @@ public sealed class EngineClientIntegrationTests
     Assert.Equal(EngineFailureKind.InvalidRequest, exception.Kind);
   }
 
+  [Fact]
+  public async Task WarmUpAsync_RunningEngine_CompletesAndIsRepeatable()
+  {
+    EngineClient engineClient = await CreateClientAsync();
+
+    // The probe in CreateClientAsync already waited for readiness, so the engine is warm
+    // before the first call — which is exactly the repeat case the contract promises is cheap.
+    await engineClient.WarmUpAsync().WaitAsync(_timeout);
+    await engineClient.WarmUpAsync().WaitAsync(_timeout);
+  }
+
   private static void AssertPlausible(EngineSuggestion suggestion)
   {
     Assert.InRange(suggestion.BlackWinRate, 0.0, 1.0);

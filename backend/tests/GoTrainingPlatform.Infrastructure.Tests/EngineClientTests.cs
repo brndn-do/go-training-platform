@@ -193,6 +193,104 @@ public sealed class EngineClientTests
       CreateClient(handler).GetSuggestionAsync([], BoardSize, 7.5, BotStrength.Kyu20, cts.Token));
   }
 
+  [Fact]
+  public async Task WarmUpAsync_EngineReturnsOk_PostsToWarmUpEndpoint()
+  {
+    FakeHttpMessageHandler handler = new(HttpStatusCode.OK, string.Empty);
+
+    await CreateClient(handler).WarmUpAsync();
+
+    Assert.Equal(1, handler.CallCount);
+    Assert.Equal(HttpMethod.Post, handler.LastRequest!.Method);
+    Assert.Equal("/warmup", handler.LastRequest.RequestUri!.AbsolutePath);
+  }
+
+  [Fact]
+  public async Task WarmUpAsync_EngineReturnsOkWithUnreadableBody_Succeeds()
+  {
+    // Warm-up carries no response contract, so the body is never read and cannot fail the call.
+    FakeHttpMessageHandler handler = new(HttpStatusCode.OK, new UnreadableHttpContent());
+
+    await CreateClient(handler).WarmUpAsync();
+
+    Assert.Equal(1, handler.CallCount);
+  }
+
+  [Fact]
+  public async Task WarmUpAsync_EngineReturnsServerError_ThrowsUnavailable()
+  {
+    FakeHttpMessageHandler handler = new(HttpStatusCode.InternalServerError, "{}");
+
+    var exception = await Assert.ThrowsAsync<EngineException>(() =>
+      CreateClient(handler).WarmUpAsync());
+
+    Assert.Equal(EngineFailureKind.Unavailable, exception.Kind);
+  }
+
+  [Fact]
+  public async Task WarmUpAsync_EngineReturnsNotFound_ThrowsInvalidRequest()
+  {
+    FakeHttpMessageHandler handler = new(HttpStatusCode.NotFound, "{}");
+
+    var exception = await Assert.ThrowsAsync<EngineException>(() =>
+      CreateClient(handler).WarmUpAsync());
+
+    Assert.Equal(EngineFailureKind.InvalidRequest, exception.Kind);
+  }
+
+  [Fact]
+  public async Task WarmUpAsync_TransportFails_ThrowsUnavailable()
+  {
+    FakeHttpMessageHandler handler = new(
+      HttpStatusCode.OK, string.Empty, exceptionToThrow: new HttpRequestException());
+
+    var exception = await Assert.ThrowsAsync<EngineException>(() =>
+      CreateClient(handler).WarmUpAsync());
+
+    Assert.Equal(EngineFailureKind.Unavailable, exception.Kind);
+  }
+
+  [Fact]
+  public async Task WarmUpAsync_EngineDoesNotAnswerBeforeTimeout_ThrowsUnavailable()
+  {
+    FakeHttpMessageHandler handler = new(
+      HttpStatusCode.OK, string.Empty, delay: TimeSpan.FromSeconds(30));
+
+    HttpClient httpClient = new(handler)
+    {
+      BaseAddress = new Uri("http://engine"),
+      Timeout = TimeSpan.FromMilliseconds(100),
+    };
+
+    var exception = await Assert.ThrowsAsync<EngineException>(() =>
+      new EngineClient(httpClient).WarmUpAsync());
+
+    Assert.Equal(EngineFailureKind.Unavailable, exception.Kind);
+  }
+
+  [Fact]
+  public async Task WarmUpAsync_ClientHasNoBaseAddress_ThrowsInvalidRequest()
+  {
+    FakeHttpMessageHandler handler = new(HttpStatusCode.OK, string.Empty);
+
+    var exception = await Assert.ThrowsAsync<EngineException>(() =>
+      new EngineClient(new HttpClient(handler)).WarmUpAsync());
+
+    Assert.Equal(EngineFailureKind.InvalidRequest, exception.Kind);
+  }
+
+  [Fact]
+  public async Task WarmUpAsync_CallerCancels_PropagatesCancellation()
+  {
+    FakeHttpMessageHandler handler = new(HttpStatusCode.OK, string.Empty);
+
+    CancellationTokenSource cts = new();
+
+    await cts.CancelAsync();
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+      CreateClient(handler).WarmUpAsync(cts.Token));
+  }
+
   private static EngineClient CreateClient(FakeHttpMessageHandler handler) =>
     new(new HttpClient(handler) { BaseAddress = new Uri("http://engine") });
 }
