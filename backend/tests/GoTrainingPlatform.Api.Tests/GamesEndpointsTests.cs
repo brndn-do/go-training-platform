@@ -8,7 +8,6 @@ using GoTrainingPlatform.Application.Orchestration;
 using GoTrainingPlatform.Application.Tests.Games;
 using GoTrainingPlatform.Application.Tests.Orchestration;
 using GoTrainingPlatform.Domain.Enums;
-using GoTrainingPlatform.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -313,8 +312,8 @@ public sealed class GamesEndpointsTests
               options => options.UserId = signedInAs);
         });
 
-        // These tests never reach Postgres or the engine, but the composition root demands
-        // both before it will start.
+        // All three are validated at startup, so the host will not start without them. These
+        // tests never reach Postgres or the engine, and never send a cross-origin request.
         builder.UseSetting("Cors:AllowedOrigins:0", "http://localhost:5173");
         builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=unused");
         builder.UseSetting("Engine:BaseUrl", "http://unused");

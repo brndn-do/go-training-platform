@@ -15,13 +15,21 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   // The name ASP.NET Core gives Identity's application cookie by default.
   private const string SessionCookieName = ".AspNetCore.Identity.Application";
 
+  private const string RegisterRoute = "/api/auth/register";
+  private const string LoginRoute = "/api/auth/login";
+  private const string LogoutRoute = "/api/auth/logout";
+  private const string MeRoute = "/api/auth/me";
+
+  private const string Password = "correct horse battery staple";
+  private const string WrongPassword = "wrong password entirely";
+
   [Fact]
   public async Task Register_NewAccount_PersistsUser()
   {
     string email = NewEmail();
 
     var response = await fixture.CreateClient()
-      .PostAsJsonAsync("/api/auth/register", new RegisterRequest { Email = email, Password = "correct horse battery staple" });
+      .PostAsJsonAsync(RegisterRoute, new RegisterRequest { Email = email, Password = Password });
 
     Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
@@ -36,12 +44,12 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
     string email = NewEmail();
 
     var response1 = await fixture.CreateClient()
-      .PostAsJsonAsync("/api/auth/register", new RegisterRequest { Email = email, Password = "correct horse battery staple" });
+      .PostAsJsonAsync(RegisterRoute, new RegisterRequest { Email = email, Password = Password });
 
     Assert.Equal(HttpStatusCode.NoContent, response1.StatusCode);
 
     var response2 = await fixture.CreateClient()
-      .PostAsJsonAsync("/api/auth/register", new RegisterRequest { Email = email, Password = "correct horse battery staple" });
+      .PostAsJsonAsync(RegisterRoute, new RegisterRequest { Email = email, Password = Password });
 
     Assert.Equal(HttpStatusCode.BadRequest, response2.StatusCode);
 
@@ -59,8 +67,9 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   {
     string email = NewEmail();
 
+    // Spelled out rather than taken from a constant: the password's length is the subject.
     var response = await fixture.CreateClient()
-      .PostAsJsonAsync("/api/auth/register", new RegisterRequest { Email = email, Password = "short" });
+      .PostAsJsonAsync(RegisterRoute, new RegisterRequest { Email = email, Password = "short" });
 
     Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
@@ -76,12 +85,10 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Login_CorrectCredentials_ReturnsNoContent()
   {
-    string email = NewEmail();
-    const string password = "correct horse battery staple";
-    await RegisterAsync(email, password);
+    string email = await RegisterNewUserAsync();
 
     var response = await fixture.CreateClient()
-      .PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = password });
+      .PostAsJsonAsync(LoginRoute, new LoginRequest { Email = email, Password = Password });
 
     Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
   }
@@ -89,11 +96,10 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Login_WrongPassword_ReturnsUnauthorized()
   {
-    string email = NewEmail();
-    await RegisterAsync(email, "correct horse battery staple");
+    string email = await RegisterNewUserAsync();
 
     var response = await fixture.CreateClient()
-      .PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = "wrong password entirely" });
+      .PostAsJsonAsync(LoginRoute, new LoginRequest { Email = email, Password = WrongPassword });
 
     Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
   }
@@ -102,7 +108,7 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   public async Task Login_UnknownEmail_ReturnsUnauthorized()
   {
     var response = await fixture.CreateClient()
-      .PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = NewEmail(), Password = "correct horse battery staple" });
+      .PostAsJsonAsync(LoginRoute, new LoginRequest { Email = NewEmail(), Password = Password });
 
     Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
   }
@@ -110,14 +116,13 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Login_WrongPasswordVsUnknownEmail_ReturnsIdenticalResponse()
   {
-    string registeredEmail = NewEmail();
-    await RegisterAsync(registeredEmail, "correct horse battery staple");
+    string registeredEmail = await RegisterNewUserAsync();
 
     var wrongPasswordResponse = await fixture.CreateClient()
-      .PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = registeredEmail, Password = "wrong password entirely" });
+      .PostAsJsonAsync(LoginRoute, new LoginRequest { Email = registeredEmail, Password = WrongPassword });
 
     var unknownEmailResponse = await fixture.CreateClient()
-      .PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = NewEmail(), Password = "correct horse battery staple" });
+      .PostAsJsonAsync(LoginRoute, new LoginRequest { Email = NewEmail(), Password = Password });
 
     Assert.Equal(wrongPasswordResponse.StatusCode, unknownEmailResponse.StatusCode);
 
@@ -137,12 +142,10 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Login_CorrectCredentials_SetsCookieWithSecureAttributes()
   {
-    string email = NewEmail();
-    const string password = "correct horse battery staple";
-    await RegisterAsync(email, password);
+    string email = await RegisterNewUserAsync();
 
     var response = await fixture.CreateCookielessClient()
-      .PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = password });
+      .PostAsJsonAsync(LoginRoute, new LoginRequest { Email = email, Password = Password });
 
     Assert.True(response.Headers.TryGetValues("Set-Cookie", out var cookies));
     var cookie = SetCookieHeaderValue.Parse(cookies!.Single());
@@ -158,12 +161,10 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Login_RememberMeTrue_CookieIsPersistent()
   {
-    string email = NewEmail();
-    const string password = "correct horse battery staple";
-    await RegisterAsync(email, password);
+    string email = await RegisterNewUserAsync();
 
     var response = await fixture.CreateCookielessClient()
-      .PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = password, RememberMe = true });
+      .PostAsJsonAsync(LoginRoute, new LoginRequest { Email = email, Password = Password, RememberMe = true });
 
     var cookie = SetCookieHeaderValue.Parse(response.Headers.GetValues("Set-Cookie").Single());
 
@@ -173,12 +174,10 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Login_RememberMeFalse_CookieIsSession()
   {
-    string email = NewEmail();
-    const string password = "correct horse battery staple";
-    await RegisterAsync(email, password);
+    string email = await RegisterNewUserAsync();
 
     var response = await fixture.CreateCookielessClient()
-      .PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = password, RememberMe = false });
+      .PostAsJsonAsync(LoginRoute, new LoginRequest { Email = email, Password = Password, RememberMe = false });
 
     var cookie = SetCookieHeaderValue.Parse(response.Headers.GetValues("Set-Cookie").Single());
 
@@ -189,15 +188,13 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Login_WrongPassword_DoesNotAuthenticateSubsequentRequest()
   {
-    string email = NewEmail();
-    const string password = "correct horse battery staple";
-    await RegisterAsync(email, password);
+    string email = await RegisterNewUserAsync();
 
     var client = fixture.CreateClient();
 
     var loginResponse = await client.PostAsJsonAsync(
-      "/api/auth/login",
-      new LoginRequest { Email = email, Password = "wrong password entirely" });
+      LoginRoute,
+      new LoginRequest { Email = email, Password = WrongPassword });
 
     Assert.Equal(HttpStatusCode.Unauthorized, loginResponse.StatusCode);
 
@@ -210,12 +207,10 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Login_WrongPassword_IncrementsFailedAccessCount()
   {
-    string email = NewEmail();
-    const string password = "correct horse battery staple";
-    await RegisterAsync(email, password);
+    string email = await RegisterNewUserAsync();
 
     await fixture.CreateClient()
-      .PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = "wrong password entirely" });
+      .PostAsJsonAsync(LoginRoute, new LoginRequest { Email = email, Password = WrongPassword });
 
     Assert.Equal(1, await ReadAccessFailedCountAsync(email));
   }
@@ -223,19 +218,17 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Login_SucceedsAfterFailure_ResetsFailedAccessCount()
   {
-    string email = NewEmail();
-    const string password = "correct horse battery staple";
-    await RegisterAsync(email, password);
+    string email = await RegisterNewUserAsync();
 
     var client = fixture.CreateClient();
 
-    await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = "wrong password entirely" });
+    await client.PostAsJsonAsync(LoginRoute, new LoginRequest { Email = email, Password = WrongPassword });
 
     // Checked before signing in, so a reset is what this observes rather than a count that
     // was never incremented in the first place.
     Assert.Equal(1, await ReadAccessFailedCountAsync(email));
 
-    var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = password });
+    var response = await client.PostAsJsonAsync(LoginRoute, new LoginRequest { Email = email, Password = Password });
 
     Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     Assert.Equal(0, await ReadAccessFailedCountAsync(email));
@@ -244,17 +237,9 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Logout_AfterLogin_ExpiresSessionCookie()
   {
-    string email = NewEmail();
-    const string password = "correct horse battery staple";
-    await RegisterAsync(email, password);
+    var (client, _) = await RegisterAndLoginAsync();
 
-    var client = fixture.CreateClient();
-
-    var loginResponse = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { Email = email, Password = password });
-
-    Assert.Equal(HttpStatusCode.NoContent, loginResponse.StatusCode);
-
-    var response = await client.PostAsync("/api/auth/logout", content: null);
+    var response = await client.PostAsync(LogoutRoute, content: null);
 
     Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
@@ -268,7 +253,7 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Logout_WithoutSession_ReturnsNoContent()
   {
-    var response = await fixture.CreateClient().PostAsync("/api/auth/logout", content: null);
+    var response = await fixture.CreateClient().PostAsync(LogoutRoute, content: null);
 
     Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
   }
@@ -276,19 +261,9 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Me_AfterLogin_ReturnsSignedInUser()
   {
-    string email = NewEmail();
-    const string password = "correct horse battery staple";
-    await RegisterAsync(email, password);
+    var (client, email) = await RegisterAndLoginAsync();
 
-    var client = fixture.CreateClient();
-
-    var loginResponse = await client.PostAsJsonAsync(
-      "/api/auth/login",
-      new LoginRequest { Email = email, Password = password });
-
-    Assert.Equal(HttpStatusCode.NoContent, loginResponse.StatusCode);
-
-    var response = await client.GetAsync("/api/auth/me");
+    var response = await client.GetAsync(MeRoute);
 
     Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -310,7 +285,7 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   public async Task Me_WithoutSession_ReturnsNullUser()
   {
     var client = fixture.CreateClient();
-    var response = await client.GetAsync("/api/auth/me");
+    var response = await client.GetAsync(MeRoute);
 
     Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -322,19 +297,9 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Me_AfterLogin_ResponseIsNotCacheable()
   {
-    string email = NewEmail();
-    const string password = "correct horse battery staple";
-    await RegisterAsync(email, password);
+    var (client, _) = await RegisterAndLoginAsync();
 
-    var client = fixture.CreateClient();
-
-    var loginResponse = await client.PostAsJsonAsync(
-      "/api/auth/login",
-      new LoginRequest { Email = email, Password = password });
-
-    Assert.Equal(HttpStatusCode.NoContent, loginResponse.StatusCode);
-
-    var response = await client.GetAsync("/api/auth/me");
+    var response = await client.GetAsync(MeRoute);
 
     Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -349,23 +314,13 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
   [Fact]
   public async Task Logout_AfterLogin_LeavesSubsequentRequestAnonymous()
   {
-    string email = NewEmail();
-    const string password = "correct horse battery staple";
-    await RegisterAsync(email, password);
+    var (client, _) = await RegisterAndLoginAsync();
 
-    var client = fixture.CreateClient();
-
-    var loginResponse = await client.PostAsJsonAsync(
-      "/api/auth/login",
-      new LoginRequest { Email = email, Password = password });
-
-    Assert.Equal(HttpStatusCode.NoContent, loginResponse.StatusCode);
-
-    var logoutResponse = await client.PostAsync("/api/auth/logout", content: null);
+    var logoutResponse = await client.PostAsync(LogoutRoute, content: null);
 
     Assert.Equal(HttpStatusCode.NoContent, logoutResponse.StatusCode);
 
-    var response = await client.GetAsync("/api/auth/me");
+    var response = await client.GetAsync(MeRoute);
 
     Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -409,14 +364,38 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
 
   // Registers through the real endpoint rather than inserting a row directly, so the
   // password hash a login test verifies against is the one Register actually produces.
-  private async Task RegisterAsync(string email, string password)
+  // Throws rather than asserting: a failure here is broken setup, not a failed expectation.
+  private async Task<string> RegisterNewUserAsync()
   {
+    string email = NewEmail();
+
     var response = await fixture.CreateClient()
-      .PostAsJsonAsync("/api/auth/register", new RegisterRequest { Email = email, Password = password });
+      .PostAsJsonAsync(RegisterRoute, new RegisterRequest { Email = email, Password = Password });
 
     if (response.StatusCode != HttpStatusCode.NoContent)
     {
       throw new InvalidOperationException($"Test setup failed: registering {email} returned {response.StatusCode}.");
     }
+
+    return email;
+  }
+
+  // For tests where being signed in is the starting point rather than the subject. The
+  // Login_* tests sign in by hand instead, since asserting on that response is their job.
+  private async Task<(HttpClient Client, string Email)> RegisterAndLoginAsync()
+  {
+    string email = await RegisterNewUserAsync();
+    var client = fixture.CreateClient();
+
+    var response = await client.PostAsJsonAsync(
+      LoginRoute,
+      new LoginRequest { Email = email, Password = Password });
+
+    if (response.StatusCode != HttpStatusCode.NoContent)
+    {
+      throw new InvalidOperationException($"Test setup failed: logging in {email} returned {response.StatusCode}.");
+    }
+
+    return (client, email);
   }
 }
