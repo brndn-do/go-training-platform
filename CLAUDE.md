@@ -28,7 +28,7 @@ scripts/    # Dev/infra shell scripts spanning all stacks.
 ./          # docker-compose.yml, .env.example, .editorconfig
 ```
 
-`docker-compose.yml` brings up `postgres` and `engine`. The `backend` service references a `backend/Dockerfile` that **does not exist yet**, so `up backend` still fails to build. The frontend is not a compose service — run it locally.
+`docker-compose.yml` brings up `postgres`, `engine`, and `backend`. The frontend is not a compose service — run it locally.
 
 ## Status
 
