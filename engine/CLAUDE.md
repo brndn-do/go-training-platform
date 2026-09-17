@@ -41,3 +41,4 @@ Set in `config/go_training_platform_config.cfg` and assumed by the code. [README
 
 - The `eigenavx2`/`eigen` Linux release binary is an AppImage. It self-mounts via FUSE at startup, which works locally (with FUSE) but fails in a container. Fix: `./katago --appimage-extract` once, then `COPY` the extracted `squashfs-root/`. `AppRun` resolves its own location via `readlink -f`, so no code change is needed.
 - Scope `.dockerignore` build-output patterns to `src/**/bin/`, not `**/bin/` (so `katago/squashfs-root/usr/bin/ isn't ignored)
+- `THIRD-PARTY-NOTICES.txt` must stay in the image. The KataGo binary and both models are gitignored, so the image is the only thing that redistributes them, and their MIT-style licenses require the notice to travel with the copy.

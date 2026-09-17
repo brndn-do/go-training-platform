@@ -1,0 +1,119 @@
+THIRD-PARTY NOTICES
+==============================================================================
+
+This container image includes third-party software that is not part of this
+repository. The files below are downloaded separately at build time (see the
+repository README) and are redistributed inside the image, so their licenses
+are reproduced here in full.
+
+  1. KataGo engine binary        katago/squashfs-root/
+  2. kata1-zhizi-b40c768nbt-s11472M-d5982M.bin.gz   models/
+  3. b18c384nbt-humanv0.bin.gz                      models/
+
+
+==============================================================================
+1. KataGo engine binary
+==============================================================================
+
+KataGo v1.18.1, git revision 92ee95c0a4b25fec214da00951ab69e97e207729.
+Obtained as an official release build from https://github.com/lightvector/KataGo
+and shipped as the extracted contents of its AppImage.
+
+The code in this repository currently relies on several other libraries, parts of libraries,
+or external files: clblast, composable_kernel_fmha, cudnn-frontend, cutlass, filesystem-1.5.8, half-2.2.0,
+httplib, katagocoreml (which itself vendors components from Apple's coremltools and the FP16
+library), macos (Swift CMake modules), mozilla-cacerts, nlohmann_json, sgfmill, onnx, and
+tclap-1.2.5. For the licenses for those libraries and/or files, see the individual readmes and/or
+license files for each one within their respective subdirectories within cpp/external.
+Additionally, cpp/core/sha2.cpp derives from another piece of external code and embeds its own
+license within that file.
+
+Some parts of python/katago/model_pytorch.py and a few other files, where noted, are modifications
+of code from other open source authors.
+
+Aside from the above, the license for all OTHER content in this repo is as follows:
+
+----------------------------------------
+
+Copyright 2025 David J Wu ("lightvector") and/or other authors of the content in this repository.
+(See 'CONTRIBUTORS' file for a list of authors as well as other indirect contributors).
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+----------------------------------------
+
+Additional disclaimer from David J Wu ("lightvector") regarding the above license and KataGo's
+repository (https://github.com/lightvector/KataGo):
+I am providing code in the repository to you under an open source license. Because this is my
+personal repository, the license you receive to my code is from me, and not from any of my employers,
+present or past (including Facebook, during part of 2020-2023).
+
+
+==============================================================================
+2. kata1-zhizi-b40c768nbt-s11472M-d5982M.bin.gz
+==============================================================================
+
+A "zhizi" neural network released by ZhiziGo for KataGo's "kata1" run, obtained
+from https://katagotraining.org/networks/ . These networks carry their own
+license, separate from the one covering KataGo's own networks below.
+
+Copyright (c) 2026  hzyhhzy & zhizigo.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+==============================================================================
+3. b18c384nbt-humanv0.bin.gz
+==============================================================================
+
+The KataGo Human SL Network, released with
+https://github.com/lightvector/KataGo/releases/tag/v1.15.0 and covered by the
+KataGo Neural Network License published at
+https://katagotraining.org/network_license/ .
+
+Copyright 2026 David J Wu ("lightvector").
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the
+neural net files or training weight files (the "Software"), to deal in the Software
+without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

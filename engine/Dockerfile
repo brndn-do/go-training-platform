@@ -21,6 +21,9 @@ RUN apt-get update \
 
 # Ordered least- to most-frequently changed: a changed layer invalidates every
 # layer after it, so the build output goes last to keep the assets cache-stable.
+# The notices cover the KataGo binary and models below, which ship only in this
+# image and not in the repository.
+COPY THIRD-PARTY-NOTICES.txt .
 COPY katago/squashfs-root/usr/bin/katago katago/squashfs-root/usr/bin/katago
 COPY katago/squashfs-root/usr/lib/ katago/squashfs-root/usr/lib/
 COPY katago/squashfs-root/AppRun katago/squashfs-root/AppRun
