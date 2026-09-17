@@ -15,6 +15,16 @@ namespace GoTrainingPlatform.Api.Tests;
 /// </summary>
 public sealed class PostgresApiFixture : IAsyncLifetime
 {
+  /// <summary>
+  /// The first origin the host allows to call it with credentials.
+  /// </summary>
+  public const string AllowedOrigin = "http://localhost:5173";
+
+  /// <summary>
+  /// The second origin the host allows to call it with credentials.
+  /// </summary>
+  public const string SecondAllowedOrigin = "https://app.example.com";
+
   private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:16-alpine").Build();
 
   private WebApplicationFactory<Program>? _factory;
@@ -30,9 +40,12 @@ public sealed class PostgresApiFixture : IAsyncLifetime
     _factory = new WebApplicationFactory<Program>()
       .WithWebHostBuilder(builder =>
       {
+        builder.UseSetting("Cors:AllowedOrigins:0", AllowedOrigin);
+        builder.UseSetting("Cors:AllowedOrigins:1", SecondAllowedOrigin);
         builder.UseSetting("ConnectionStrings:DefaultConnection", _container.GetConnectionString());
 
-        // The composition root demands it before it will start; no test here reaches the engine.
+        // The composition root demands it before it will start. It points nowhere, so any
+        // request that reaches the engine fails as unavailable.
         builder.UseSetting("Engine:BaseUrl", "http://unused");
       });
 

@@ -11,6 +11,34 @@ using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// CORS
+builder.Services.AddOptionsWithValidateOnStart<CorsOptions>()
+  .Bind(builder.Configuration.GetSection(CorsOptions.SectionName))
+  .Validate(
+    options =>
+      options.AllowedOrigins.Length > 0 // at least one allowed origin
+        && options.AllowedOrigins.All(
+          origin =>
+            origin.Length > 0
+            && origin.Last() != '/' // no trailing slash
+            && Uri.TryCreate(origin, UriKind.Absolute, out Uri? uriResult)
+            && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps)),
+    "Cors__AllowedOrigins must be set to at least one valid http/https origin.");
+
+CorsOptions corsOptions = builder.Configuration.GetSection(CorsOptions.SectionName).Get<CorsOptions>()
+  ?? throw new InvalidOperationException("Cors__AllowedOrigins must be set to at least one valid http/https origin.");
+
+builder.Services.AddCors((options) =>
+{
+  options.AddPolicy("Spa", policy =>
+  {
+    policy.WithOrigins(corsOptions.AllowedOrigins)
+      .AllowAnyHeader()
+      .AllowAnyMethod()
+      .AllowCredentials();
+  });
+});
+
 // Database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
   ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -121,7 +149,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseCors("Spa");
 app.UseAuthentication();
 app.UseAuthorization();
 
