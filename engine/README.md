@@ -13,7 +13,7 @@ Every value in the file is tuned for one target:
 Consequences:
 
 - **Search is expensive without a graphics card.** On CPU alone, every bit of extra search costs real latency.
-- **Memory is tight, and this project loads two neural networks at once.** That roughly doubles both the memory footprint and the load time versus a single-network setup.
+- **Memory is tight, and this project loads two neural networks at once.** — but the self-play network dominates both the footprint and the load time.
 - **Scaling to zero means the model load is paid on a cold start**, in front of a waiting user — which is what the `/warmup` endpoint exists to trigger ahead of time.
 
 ## Background
@@ -94,14 +94,13 @@ Player hints deliberately ignore the game's own bot strength: a hint should be t
 
 The rest of the config file follows from the environment above rather than from the research:
 
-- **`nnCacheSizePowerOfTwo`** caps a cache of already-evaluated positions. The example config's default works out to roughly 12.9 GB — more than the whole 8 GB container — so it is set to 2^18, about 390 MB.
+- **`nnCacheSizePowerOfTwo`** caps a cache of already-evaluated positions. The example config's default works out to roughly 12.9 GB — more than the whole 8 GB container — so it is set to 2^18, which measures out to about 470 MB when full. It shouldn't get close to full in practice.
 - **`numEigenThreadsPerModel`** sets how many CPU cores evaluate the network. It does *not* default from the core count; left alone it would have collapsed to 1 and left three of the four vCPUs idle. It is set explicitly to 4.
 
 The config file's inline comments show the arithmetic for both.
 
 ## Open questions
 
-- **The cache size is a guess**, pending real measurement of memory use once everything is running.
 - **The top of the ranked ladder is unverified.** If `rank_9d` plays too weakly against real users, the fix is tuning against play-testing feedback, since there is no benchmark to calibrate against.
 - **KataGo can do the weighted random pick itself** (`humanSLChosenMoveProp`, `humanSLChosenMovePiklLambda` — see its `gtp_human5k_example.cfg` and `gtp_human9d_search_example.cfg`). This project does it in `src/Engine.Api/Analysis/` instead. Worth revisiting if the two ever disagree.
 - **The `preaz_*` and `proyear_*` profiles are unused.** They select opening style and historical era rather than strength, and are there if style ever matters.

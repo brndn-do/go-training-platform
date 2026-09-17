@@ -40,7 +40,7 @@ We will run KataGo with no search (`maxVisits = 1`) anywhere, for any strength, 
 
 **Negative:**
 
-- Two networks loaded simultaneously roughly doubles memory footprint and model load time versus a single-network setup.
+- Two networks loaded simultaneously cost more memory than a single-network setup.
 - The top tier is capped at whatever 1-visit self-play policy actually plays at (~8d KGS per informal testing), not KataGo's full strength. This is a ceiling we're accepting for now.
 - The top end of the ranked ladder (per Context, likely 9d) is the least trustworthy part of the system: it's plausibly *weaker* than its label suggests, and we have no independent benchmark for it.
 - If either network's behavior needs correction later (e.g. 9d feels too weak in practice), the fix is empirical tuning against play-testing feedback.
