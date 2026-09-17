@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using GoTrainingPlatform.Api.Contracts;
 using GoTrainingPlatform.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
@@ -82,5 +83,34 @@ public sealed class AuthController(UserManager<ApplicationUser> userManager, Sig
     await signInManager.SignOutAsync();
 
     return NoContent();
+  }
+
+  /// <summary>
+  /// Reports who, if anyone, is signed in on the current request.
+  /// </summary>
+  /// <returns>A <see cref="MeResponse"/> whose <c>User</c> is <c>null</c> when no one is signed in.</returns>
+  [AllowAnonymous]
+  [HttpGet("me")]
+  [ProducesResponseType(typeof(MeResponse), StatusCodes.Status200OK)]
+  [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+  public IActionResult Me()
+  {
+    bool isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+
+    if (!isAuthenticated)
+    {
+      return Ok(new MeResponse(null));
+    }
+
+    // Authenticated but unreadable
+    if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid id))
+    {
+      throw new InvalidOperationException("The user id claim is not a valid Guid.");
+    }
+
+    var email = User.FindFirstValue(ClaimTypes.Email)
+      ?? throw new InvalidOperationException("The signed-in user has no email claim.");
+
+    return Ok(new MeResponse(new UserResponse(id, email)));
   }
 }

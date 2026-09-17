@@ -41,4 +41,6 @@ The frontend is **not** a `docker-compose` service — run it locally.
 
 ## The API it consumes
 
-See [docs/api/auth.md](../docs/api/auth.md) and [docs/api/games.md](../docs/api/games.md). Requests must include cookies (`credentials: 'include'`), and the API has no CORS policy yet (#33), so the dev server's origin can't call it until that lands.
+See [docs/api/auth.md](../docs/api/auth.md) and [docs/api/games.md](../docs/api/games.md). Requests must include cookies (`credentials: 'include'`). The API's CORS policy names the dev server's origin, which comes from the root `.env`'s `Cors__AllowedOrigins__0` — change the Vite port and that has to change with it.
+
+`GET /api/auth/me` is the page-load session check: the cookie is `HttpOnly`, so asking the API is the only way to know whether someone is already signed in. It answers `200` with `user: null` rather than `401` when nobody is, so a global "401 means log out" rule can stay unconditional everywhere else.

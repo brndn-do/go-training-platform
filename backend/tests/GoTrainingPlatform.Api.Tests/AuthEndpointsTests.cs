@@ -273,6 +273,107 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
     Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
   }
 
+  [Fact]
+  public async Task Me_AfterLogin_ReturnsSignedInUser()
+  {
+    string email = NewEmail();
+    const string password = "correct horse battery staple";
+    await RegisterAsync(email, password);
+
+    var client = fixture.CreateClient();
+
+    var loginResponse = await client.PostAsJsonAsync(
+      "/api/auth/login",
+      new LoginRequest { Email = email, Password = password });
+
+    Assert.Equal(HttpStatusCode.NoContent, loginResponse.StatusCode);
+
+    var response = await client.GetAsync("/api/auth/me");
+
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+    var me = await response.Content.ReadFromJsonAsync<MeResponse>();
+    UserResponse? user = me!.User;
+
+    Assert.NotNull(user);
+
+    // Compared against the persisted row rather than asserted non-empty: a Guid that parses
+    // says nothing about whose it is.
+    Assert.Equal(await ReadUserIdAsync(email), user.Id);
+
+    // The email claim is Identity's to issue, not this codebase's. Nothing else asserts that
+    // it reaches the cookie, and the response carries no email if it doesn't.
+    Assert.Equal(email, user.Email);
+  }
+
+  [Fact]
+  public async Task Me_WithoutSession_ReturnsNullUser()
+  {
+    var client = fixture.CreateClient();
+    var response = await client.GetAsync("/api/auth/me");
+
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+    var me = await response.Content.ReadFromJsonAsync<MeResponse>();
+
+    Assert.Null(me!.User);
+  }
+
+  [Fact]
+  public async Task Me_AfterLogin_ResponseIsNotCacheable()
+  {
+    string email = NewEmail();
+    const string password = "correct horse battery staple";
+    await RegisterAsync(email, password);
+
+    var client = fixture.CreateClient();
+
+    var loginResponse = await client.PostAsJsonAsync(
+      "/api/auth/login",
+      new LoginRequest { Email = email, Password = password });
+
+    Assert.Equal(HttpStatusCode.NoContent, loginResponse.StatusCode);
+
+    var response = await client.GetAsync("/api/auth/me");
+
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+    // Asserted on the signed-in response, since that is the one whose body names a user and
+    // would identify the wrong person if a shared cache served it to someone else.
+    var cacheControl = response.Headers.CacheControl;
+
+    Assert.NotNull(cacheControl);
+    Assert.True(cacheControl.NoStore, "The response must not be stored by any cache.");
+  }
+
+  [Fact]
+  public async Task Logout_AfterLogin_LeavesSubsequentRequestAnonymous()
+  {
+    string email = NewEmail();
+    const string password = "correct horse battery staple";
+    await RegisterAsync(email, password);
+
+    var client = fixture.CreateClient();
+
+    var loginResponse = await client.PostAsJsonAsync(
+      "/api/auth/login",
+      new LoginRequest { Email = email, Password = password });
+
+    Assert.Equal(HttpStatusCode.NoContent, loginResponse.StatusCode);
+
+    var logoutResponse = await client.PostAsync("/api/auth/logout", content: null);
+
+    Assert.Equal(HttpStatusCode.NoContent, logoutResponse.StatusCode);
+
+    var response = await client.GetAsync("/api/auth/me");
+
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+    var me = await response.Content.ReadFromJsonAsync<MeResponse>();
+
+    Assert.Null(me!.User);
+  }
+
   // Each test needs an address no other test has used, since the fixture's database is
   // shared across the collection and emails are unique.
   private static string NewEmail() => $"{Guid.NewGuid():N}@example.com";
@@ -283,6 +384,16 @@ public sealed class AuthEndpointsTests(PostgresApiFixture fixture)
     Assert.Single(
       response.Headers.GetValues("Set-Cookie").Select(header => SetCookieHeaderValue.Parse(header)),
       cookie => cookie.Name == SessionCookieName);
+
+  private async Task<Guid> ReadUserIdAsync(string email)
+  {
+    await using var context = fixture.CreateContext();
+
+    return await context.Users
+      .Where(candidate => candidate.Email == email)
+      .Select(candidate => candidate.Id)
+      .FirstAsync();
+  }
 
   // Reads through a fresh context every time: a reused one would answer from its identity
   // map and hide the write the endpoint actually made.

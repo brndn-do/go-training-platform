@@ -3,7 +3,7 @@
 The HTTP layer and the composition root. **Controllers**, not minimal API.
 
 - `Controllers/GamesController.cs` — the game endpoints under `api/games`. It takes the action and maps the outcome.
-- `Controllers/AuthController.cs` — register, login, and logout under `api/auth`, over Identity's `UserManager` and `SignInManager`.
+- `Controllers/AuthController.cs` — register, login, logout, and `me` under `api/auth`, over Identity's `UserManager` and `SignInManager`.
 - `Contracts/` — request/response DTOs, each with a static `From(...)` mapper.
 - `ErrorHandling/GameExceptionHandler.cs` — `IExceptionHandler`.
 - `HttpContextCurrentPlayer`, and `Program.cs`.
@@ -13,6 +13,8 @@ The HTTP layer and the composition root. **Controllers**, not minimal API.
 `OrchestrationResult` collapses to 404 (no such game, or not the current player's), 400 (rejected action, carrying no reason), or 200 — 201 plus `Location` from `Start`.
 
 `AuthController` maps Identity's results, which are returned rather than thrown. Register's failures become a 400 `ValidationProblemDetails` keyed by Identity's error codes. Every failed login becomes the same 401, so a response never says whether an account exists.
+
+`me` answers 200 whether or not anyone is signed in, carrying `{ user: null }` when nobody is, so the SPA's page-load check doesn't have to treat a 401 as routine. An authenticated request whose claims can't be read is a corrupt cookie rather than a signed-out user, and throws instead of reporting `null` — a 500 rather than a silent logout loop.
 
 ## Failure mapping
 
@@ -40,7 +42,7 @@ The HTTP layer and the composition root. **Controllers**, not minimal API.
 
 `Program.cs` runs with `ValidateScopes` and `ValidateOnBuild`, so a missing or mis-scoped registration fails at `Build()`.
 
-`ICurrentPlayer` is `HttpContextCurrentPlayer`, registered scoped, reading the user id claim from the login cookie. It throws when nobody is signed in, which `MapControllers().RequireAuthorization()` rules out for any action not marked `[AllowAnonymous]`.
+`ICurrentPlayer` is `HttpContextCurrentPlayer`, registered scoped, reading the user id claim from the login cookie. It throws when nobody is signed in, which `MapControllers().RequireAuthorization()` rules out for any action not marked `[AllowAnonymous]`. `AuthController.Me` is the one action that runs authenticated or not, so it reads `User`'s claims directly instead.
 
 `UseStatusCodePages()` gives bodiless error responses a `ProblemDetails` body, including the 401 for a request without a session.
 
