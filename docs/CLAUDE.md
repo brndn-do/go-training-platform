@@ -20,3 +20,4 @@
 - Consequences splits into **Positive** and **Negative**.
 - Decision and Consequences use future tense.
 - A rejected option still gets its own file with `Status: Rejected`. Add a short note above Context saying what was rejected and why, and pointing to whatever ADR supercedes it.
+- Double check claims with current online information.
