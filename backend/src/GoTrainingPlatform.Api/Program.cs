@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using GoTrainingPlatform.Api;
+using GoTrainingPlatform.Api.Endpoints;
 using GoTrainingPlatform.Api.ErrorHandling;
 using GoTrainingPlatform.Application;
 using GoTrainingPlatform.Application.Games;
@@ -91,6 +92,8 @@ builder.Services.ConfigureApplicationCookie(options =>
   };
 });
 
+builder.Services.AddHealthChecks();
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentPlayer, HttpContextCurrentPlayer>();
 
@@ -154,5 +157,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers().RequireAuthorization();
+app.MapHealthEndpoints();
 
 app.Run();

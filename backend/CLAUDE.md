@@ -47,6 +47,12 @@ To pass the full suite: Docker running (Testcontainers), plus a running engine c
 - Concurrency is `xmin`-based: a lost race throws `DbUpdateConcurrencyException` → `RepositoryFailureKind.Conflict` → 409, which means reload, not retry.
 - Game ownership is enforced in the application layer's `GameService` — not in the controller, not in the repository.
 
+## Health probes
+
+All three probes — startup, readiness, liveness — take **no external dependencies**. A probe may only depend on something its failure response can fix, and neither restarting nor routing away fixes Postgres being down. Deliberately unlike the engine ([ADR 21](../docs/architecture/decisions/0021-three-distinct-health-signals-startup-readiness-liveness.md)), which wraps a child process it can actually restart.
+
+A bad connection string is caught by fail-fast config validation at boot and by a post-deploy smoke test, not by a probe.
+
 ## Tests
 
 One xUnit project per layer. `Api.Tests` references `Application.Tests` to reuse its fakes.
