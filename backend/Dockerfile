@@ -18,6 +18,11 @@ RUN dotnet publish --no-restore -p:RunAnalyzers=false \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
+# Install curl for compose health check
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/publish .
 
 USER $APP_UID
