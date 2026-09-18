@@ -37,6 +37,12 @@ set -a && source .env && set +a
 ```
 A variable already set in your shell beats the file, so exporting one for a single command overrides it.
 
+**Recommended: [direnv](https://direnv.net/).** It loads and unloads `.env` automatically as you enter and leave the directory, so you never hit a confusing failure from a shell you forgot to set up. The repo ships a one-line `.envrc`; install direnv, hook it into your shell, then approve the file once:
+```bash
+direnv allow .
+```
+direnv expands `${...}` the same way Bash, Docker Compose and the test assemblies do, so it sees identical values to every other consumer of the file.
+
 ### 2. Get KataGo
 
 The `katago` binary and its neural net model files aren't in git (`engine/katago/`, `engine/models/` are gitignored — large, platform-specific). Download them yourself.
@@ -93,3 +99,5 @@ Each script takes `--unit`, `--integration`, `--all` (the default) and `--covera
 `Infrastructure.Tests` provisions its own Postgres via Testcontainers, so it needs Docker running but not `dev-up.sh`. Its engine integration tests need a running engine (`dev-up.sh`).
 
 `scripts/db-add-migration.sh <Name>` generates a new EF Core migration file from the current model, without applying it. `scripts/db-migrate.sh` applies whatever migrations already exist. `scripts/db-reset.sh` wipes local Postgres data and re-migrates.
+
+`scripts/db-migrate.sh --prompt-connection` prompts for a connection string instead of taking it from the environment, for a database whose credentials shouldn't be written to `.env`. The rest of the environment still has to be exported — the tooling boots the Api host, which validates its own configuration before any migration runs.
