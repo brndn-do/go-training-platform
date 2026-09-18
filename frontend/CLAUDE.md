@@ -32,6 +32,8 @@ npm run lint      # oxlint
 
 The frontend is **not** a `docker-compose` service — run it locally.
 
+The dev server talks to a **local** backend, never the deployed API. The session cookie is `SameSite=Lax`, and `localhost` is cross-site to the deployed domain, so the browser will not send it. No CORS setting changes that.
+
 ## Tooling
 
 - **React 19**, **TypeScript**, **Vite**.
