@@ -15,6 +15,9 @@ dist-ssr/
 # Env
 .env
 
+# Local data protection key ring (real signing keys, unencrypted at rest)
+.dataprotection-keys/
+
 # KataGo model files (large binaries, dropped locally per README)
 engine/models/*
 !engine/models/.gitkeep

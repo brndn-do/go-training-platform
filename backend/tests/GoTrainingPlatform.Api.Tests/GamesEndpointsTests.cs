@@ -312,11 +312,16 @@ public sealed class GamesEndpointsTests
               options => options.UserId = signedInAs);
         });
 
-        // All three are validated at startup, so the host will not start without them. These
+        // All four are validated at startup, so the host will not start without them. These
         // tests never reach Postgres or the engine, and never send a cross-origin request.
         builder.UseSetting("Cors:AllowedOrigins:0", "http://localhost:5173");
         builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=unused");
         builder.UseSetting("Engine:BaseUrl", "http://unused");
+
+        // TestAuthHandler signs requests in, so nothing here reads the session cookie and the
+        // key ring can die with the host.
+        builder.UseSetting("DataProtection:Provider", "Ephemeral");
+        builder.UseSetting("DataProtection:ApplicationName", "GamesEndpointsTests");
       });
   }
 }
