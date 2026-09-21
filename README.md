@@ -21,7 +21,7 @@ Register, login, logout, and a `me` session check are built, and the game endpoi
 
 ## Setup
 
-**Prerequisites:** .NET 10 SDK, EF Core tools (`dotnet tool install --global dotnet-ef`), Node.js, Docker (with Compose), plus `unzip` for step 2.
+**Prerequisites:** .NET 10 SDK (with ASP.NET Core Runtime and ASP.NET Targeting Pack if not bundled already) EF Core tools (`dotnet tool install --global dotnet-ef`), Node.js, Docker (with Compose), plus `unzip` for step 2.
 
 ### 1. Configure environment
 
@@ -56,7 +56,7 @@ The binary is an AppImage, which self-mounts via FUSE at startup — that fails 
 ```bash
 unzip path/to/katago-v1.18.1-eigenavx2-linux-x64.zip -d engine/katago
 (cd engine/katago && chmod +x katago && ./katago --appimage-extract)
-engine/katago/squashfs-root/AppRun version   # verify
+cd ../.. && engine/katago/squashfs-root/AppRun version   # verify
 ```
 
 `AppRun` inside `squashfs-root/` is what config points at, not the raw binary.
@@ -71,8 +71,10 @@ Keep the downloaded filenames. `.env` names each one in `KATAGO_MODEL_FILE`/`KAT
 ### 3. Bring up infra
 
 ```bash
-scripts/dev-up.sh                        # as of now, just postgres + engine, via Docker
+scripts/dev-up.sh                        # builds and brings up backend + engine + postgres containers
 set -a && source .env && set +a          # the migration tooling runs locally, so it needs this
+dotnet restore backend/GoTrainingPlatform.slnx
+dotnet restore engine/Engine.slnx
 scripts/db-migrate.sh                    # create the schema in the fresh postgres volume
 ```
 
@@ -91,7 +93,7 @@ cd frontend && npm install && npm run dev
 scripts/test-backend.sh --unit          # Fast
 scripts/test-backend.sh --integration   # Slow; needs Docker and the engine up for four of them
 scripts/test-engine.sh --unit           # Fast
-scripts/test-engine.sh --integration    # Very slow; needs katago from step 2, and the engine container stopped
+scripts/test-engine.sh --integration    # Very slow; needs katago (step 2) and the containers stopped if memory is limited
 ```
 
 Each script takes `--unit`, `--integration`, `--all` (the default) and `--coverage`, forwards anything else to `dotnet test`, and accepts a `.csproj` path to run one project alone.
