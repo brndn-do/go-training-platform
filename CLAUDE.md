@@ -43,7 +43,7 @@ Open work lives in GitHub issues and ADRs.
 Each stack's commands live in its own CLAUDE.md. Root-level only:
 
 ```
-scripts/dev-up.sh           # docker compose up -d --build postgres engine — infra only for now
+scripts/dev-up.sh           # docker compose up -d --build — postgres, engine and backend
 scripts/db-add-migration.sh # dotnet ef migrations add <Name> — generates a migration, does not apply it
 scripts/db-migrate.sh       # dotnet ef database update
 scripts/db-reset.sh         # down --volumes, re-up postgres, re-migrate — destroys local data
