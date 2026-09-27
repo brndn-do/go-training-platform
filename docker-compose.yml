@@ -55,6 +55,13 @@ services:
       Cors__AllowedOrigins__0: ${Cors__AllowedOrigins__0}
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       Engine__BaseUrl: http://engine:8080
+      # In a volume, not the container filesystem: otherwise a rebuild discards the key ring
+      # and signs everyone out
+      DataProtection__Provider: FileSystem
+      DataProtection__ApplicationName: ${DataProtection__ApplicationName}
+      DataProtection__KeyRingPath: /keys
+    volumes:
+      - dataprotection-keys:/keys
     ports:
       - "${BACKEND_PORT:-5000}:8080"
     # Mirrors what the backend requests on Azure Container Apps.
@@ -72,3 +79,4 @@ services:
 
 volumes:
   postgres-data:
+  dataprotection-keys:

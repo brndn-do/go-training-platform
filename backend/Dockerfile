@@ -25,6 +25,10 @@ RUN apt-get update \
 
 COPY --from=build /app/publish .
 
+# Mount point for the compose key-ring volume. Created with the runtime user's ownership so the
+# named volume inherits it; the app runs non-root and could not write to a root-owned mount.
+RUN mkdir -p /keys && chown $APP_UID /keys
+
 USER $APP_UID
 
 EXPOSE 8080

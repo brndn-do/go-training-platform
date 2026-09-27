@@ -22,6 +22,10 @@ public sealed class HealthEndpointsTests : IDisposable
       builder.UseSetting("Cors:AllowedOrigins:0", "https://app.example.com");
       builder.UseSetting("ConnectionStrings:DefaultConnection", UnreachableDatabase);
       builder.UseSetting("Engine:BaseUrl", "http://unused");
+
+      // No session is involved in a probe, so the key ring can die with the host.
+      builder.UseSetting("DataProtection:Provider", "Ephemeral");
+      builder.UseSetting("DataProtection:ApplicationName", "HealthEndpointsTests");
     });
 
   [Theory]

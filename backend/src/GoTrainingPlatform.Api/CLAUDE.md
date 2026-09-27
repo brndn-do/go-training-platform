@@ -46,6 +46,10 @@ The HTTP layer and the composition root. **Controllers**, not minimal API.
 
 `UseStatusCodePages()` gives bodiless error responses a `ProblemDetails` body, including the 401 for a request without a session.
 
+The Data Protection key ring seals the session cookie, so it has to outlive any one container and be shared by every replica ([ADR 32](../../../docs/architecture/decisions/0032-persist-data-protection-keys-in-blob-storage.md)). `DataProtection__Provider` names the store outright — `AzureBlob`, `FileSystem` or `Ephemeral` — rather than being inferred from which settings are present, so a typo cannot fall through to ephemeral and boot green. `SetApplicationName` is pinned for every mode: without it the discriminator comes from the content root path, which differs between a container and a dev machine, and two hosts sharing a key ring still cannot read each other's cookies.
+
+The ring is then opened before `app.Run()`, by protecting a throwaway payload. It loads lazily otherwise, so a key store the app cannot reach would boot healthy and fail at the first login instead.
+
 ## Tests
 
 - `GamesEndpointsTests` uses `WebApplicationFactory` with the repository and engine faked, supplying its own configuration through `UseSetting`. `TestAuthHandler` signs every request in as one user per host.

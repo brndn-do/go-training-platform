@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Azure.Identity;
 using GoTrainingPlatform.Api;
 using GoTrainingPlatform.Api.Endpoints;
 using GoTrainingPlatform.Api.ErrorHandling;
@@ -6,6 +7,7 @@ using GoTrainingPlatform.Application;
 using GoTrainingPlatform.Application.Games;
 using GoTrainingPlatform.Application.Orchestration;
 using GoTrainingPlatform.Infrastructure;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -92,6 +94,70 @@ builder.Services.ConfigureApplicationCookie(options =>
   };
 });
 
+// Data protection. The session cookie is sealed with this key ring, so the ring has to outlive
+// any one container and be shared by every instance (ADR 32).
+//
+// Validated inline rather than with ValidateOnStart, because the key ring is configured during
+// service registration, below, which runs before start-time validation could report anything.
+// A missing section binds to no Provider, which the first check rejects along with an
+// out-of-range one; only a misspelled name fails earlier still, while the section is bound.
+var dataProtection = builder.Configuration.GetSection(KeyRingOptions.SectionName).Get<KeyRingOptions>()
+  ?? new KeyRingOptions();
+
+if (!Enum.IsDefined(dataProtection.Provider))
+{
+  throw new InvalidOperationException("DataProtection__Provider must be set to AzureBlob, FileSystem or Ephemeral.");
+}
+
+if (string.IsNullOrWhiteSpace(dataProtection.ApplicationName))
+{
+  throw new InvalidOperationException("DataProtection__ApplicationName must be set.");
+}
+
+var keyRing = builder.Services.AddDataProtection().SetApplicationName(dataProtection.ApplicationName);
+
+switch (dataProtection.Provider)
+{
+  case KeyRingProvider.AzureBlob:
+    {
+      var credential = new DefaultAzureCredential();
+
+      keyRing
+        .PersistKeysToAzureBlobStorage(RequireHttpsUri(dataProtection.BlobUri, "DataProtection__BlobUri"), credential)
+        .ProtectKeysWithAzureKeyVault(RequireHttpsUri(dataProtection.KeyVaultKeyUri, "DataProtection__KeyVaultKeyUri"), credential);
+      break;
+    }
+
+  case KeyRingProvider.FileSystem:
+    {
+      if (string.IsNullOrWhiteSpace(dataProtection.KeyRingPath))
+      {
+        throw new InvalidOperationException(
+          "DataProtection__KeyRingPath must be set when DataProtection__Provider is FileSystem.");
+      }
+
+      keyRing.PersistKeysToFileSystem(new DirectoryInfo(dataProtection.KeyRingPath));
+      break;
+    }
+
+  case KeyRingProvider.Ephemeral:
+    // Replaces the provider outright, so the application name set above stops applying. Nothing
+    // shares an ephemeral key ring, so there is no one to be isolated from.
+    keyRing.UseEphemeralDataProtectionProvider();
+    break;
+
+  default:
+    // Unreachable today. Left loud so a mode added to the enum without a case here fails to
+    // boot instead of silently falling back to the framework's default key storage.
+    throw new InvalidOperationException($"DataProtection__Provider {dataProtection.Provider} is not handled.");
+}
+
+// helper
+static Uri RequireHttpsUri(string? value, string setting) =>
+  Uri.TryCreate(value, UriKind.Absolute, out Uri? uri) && uri.Scheme == Uri.UriSchemeHttps
+    ? uri
+    : throw new InvalidOperationException($"{setting} must be set to an absolute https URI.");
+
 builder.Services.AddHealthChecks();
 
 builder.Services.AddHttpContextAccessor();
@@ -139,6 +205,10 @@ builder.Services.AddControllers()
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// The key ring is opened lazily, so a key store the app cannot reach would boot healthy and
+// fail on the first login. Protecting a throwaway payload forces it open now.
+app.Services.GetRequiredService<IDataProtectionProvider>().CreateProtector("startup probe").Protect("probe");
 
 // Must come first so it wraps everything downstream.
 app.UseExceptionHandler();

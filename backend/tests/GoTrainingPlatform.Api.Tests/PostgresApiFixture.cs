@@ -25,6 +25,12 @@ public sealed class PostgresApiFixture : IAsyncLifetime
   /// </summary>
   public const string SecondAllowedOrigin = "https://app.example.com";
 
+  /// <summary>
+  /// The application name the fixture's own host pins. Subkeys are derived from it, so a host
+  /// built with a different one cannot read the first one's cookies.
+  /// </summary>
+  public const string DefaultApplicationName = "PostgresApiFixture";
+
   private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:16-alpine").Build();
 
   private WebApplicationFactory<Program>? _factory;
@@ -37,17 +43,7 @@ public sealed class PostgresApiFixture : IAsyncLifetime
   {
     await _container.StartAsync();
 
-    _factory = new WebApplicationFactory<Program>()
-      .WithWebHostBuilder(builder =>
-      {
-        builder.UseSetting("Cors:AllowedOrigins:0", AllowedOrigin);
-        builder.UseSetting("Cors:AllowedOrigins:1", SecondAllowedOrigin);
-        builder.UseSetting("ConnectionStrings:DefaultConnection", _container.GetConnectionString());
-
-        // The composition root demands it before it will start. It points nowhere, so any
-        // request that reaches the engine fails as unavailable.
-        builder.UseSetting("Engine:BaseUrl", "http://unused");
-      });
+    _factory = BuildFactory(DefaultApplicationName, keyRingPath: null);
 
     await using var context = CreateContext();
     await context.Database.MigrateAsync();
@@ -127,4 +123,45 @@ public sealed class PostgresApiFixture : IAsyncLifetime
 
     return new GoTrainingPlatformDbContext(options);
   }
+
+  /// <summary>
+  /// Builds an additional host over this fixture's database, independent of the fixture's own.
+  /// Use it to observe what a second or replacement host makes of a cookie the first one issued.
+  /// The caller owns the result and must dispose it.
+  /// </summary>
+  /// <param name="keyRingPath">
+  /// A directory to persist the data protection key ring to. Two hosts given the same directory
+  /// share a key ring; given different directories, they share nothing. Pass <c>null</c> to keep
+  /// the keys with the host, so they die with it.
+  /// </param>
+  /// <param name="applicationName">
+  /// The application name to pin, defaulting to <see cref="DefaultApplicationName"/> so a host
+  /// sharing a key ring with the fixture's own also shares its derived subkeys.
+  /// </param>
+  /// <returns>A host that has not been started; the first client request starts it.</returns>
+  public WebApplicationFactory<Program> CreateSeparateHost(
+    string? keyRingPath = null,
+    string applicationName = DefaultApplicationName) =>
+    BuildFactory(applicationName, keyRingPath);
+
+  private WebApplicationFactory<Program> BuildFactory(string applicationName, string? keyRingPath) =>
+    new WebApplicationFactory<Program>()
+      .WithWebHostBuilder(builder =>
+      {
+        builder.UseSetting("Cors:AllowedOrigins:0", AllowedOrigin);
+        builder.UseSetting("Cors:AllowedOrigins:1", SecondAllowedOrigin);
+        builder.UseSetting("ConnectionStrings:DefaultConnection", _container.GetConnectionString());
+
+        // The composition root demands it before it will start. It points nowhere, so any
+        // request that reaches the engine fails as unavailable.
+        builder.UseSetting("Engine:BaseUrl", "http://unused");
+
+        builder.UseSetting("DataProtection:ApplicationName", applicationName);
+        builder.UseSetting("DataProtection:Provider", keyRingPath is null ? "Ephemeral" : "FileSystem");
+
+        if (keyRingPath is not null)
+        {
+          builder.UseSetting("DataProtection:KeyRingPath", keyRingPath);
+        }
+      });
 }

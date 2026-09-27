@@ -43,7 +43,7 @@ Open work lives in GitHub issues and ADRs.
 Each stack's commands live in its own CLAUDE.md. Root-level only:
 
 ```
-scripts/dev-up.sh           # docker compose up -d --build postgres engine — infra only for now
+scripts/dev-up.sh           # docker compose up -d --build — postgres, engine and backend
 scripts/db-add-migration.sh # dotnet ef migrations add <Name> — generates a migration, does not apply it
 scripts/db-migrate.sh       # dotnet ef database update
 scripts/db-reset.sh         # down --volumes, re-up postgres, re-migrate — destroys local data
@@ -65,6 +65,8 @@ set -a && source .env && set +a
 
 Machine-local or secret values (absolute paths, connection strings) come from `.env` via `IOptions<T>`, not from `appsettings.json`.
 
+`DataProtection__*` is the exception: `KeyRingOptions` is read once with `.Get<T>()` and never registered as `IOptions<T>`, because the key ring is configured during service registration — before DI could hand back a validated instance. Its rules are checked inline, at that point.
+
 `.env` interpolates: `REPO_ROOT` is the only absolute path in it, and every other path is built from that plus the KataGo asset names. Bash, Docker Compose and the test assemblies' `DotNetEnv` all expand `${...}` the same way.
 
 ## .NET conventions
@@ -74,7 +76,7 @@ Machine-local or secret values (absolute paths, connection strings) come from `.
 - Use `sealed record` for immutable value-shaped types (DTOs, query/response objects), and a plain class with settable properties only where something external requires it (e.g. options types bound from configuration).
 - Try-pattern (`TryMakeMove`, `TryRecordMove`, `TryUndo`) for operations that can legally fail without it being exceptional — returns `bool`, leaves state unchanged on failure.
 - Vendored and wrapped libraries stay fully behind an adapter. Their types never reach a public surface.
-- Config via `IOptions<T>` bound from `.env`'s double-underscore vars.
+- Config via `IOptions<T>` bound from `.env`'s double-underscore vars, except where a value is needed before DI exists (see `KeyRingOptions`).
 
 ### Linting (StyleCop.Analyzers)
 

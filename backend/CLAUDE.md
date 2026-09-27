@@ -51,7 +51,9 @@ To pass the full suite: Docker running (Testcontainers), plus a running engine c
 
 All three probes — startup, readiness, liveness — take **no external dependencies**. A probe may only depend on something its failure response can fix, and neither restarting nor routing away fixes Postgres being down. Deliberately unlike the engine ([ADR 21](../docs/architecture/decisions/0021-three-distinct-health-signals-startup-readiness-liveness.md)), which wraps a child process it can actually restart.
 
-A bad connection string is caught by fail-fast config validation at boot and by a post-deploy smoke test, not by a probe.
+A bad connection string is caught by fail-fast config validation at boot and by a post-deploy smoke test, not by a probe. So is a missing or misconfigured `DataProtection__*` setting.
+
+One external dependency does reach startup, against the rule above: the host opens the Data Protection key ring before it serves anything, so an unreachable key store fails the boot and `/health/startup` never answers. That failure response *is* the fix — a revision that cannot read its keys can only sign everyone out, and refusing to start leaves the working revision in place. The probe itself still evaluates nothing.
 
 ## Tests
 
