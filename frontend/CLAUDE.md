@@ -2,7 +2,7 @@
 
 React single-page app built with Vite.
 
-**Status: scaffold only.**
+**Status:** sign in/register/log out, and start and play a 9×9 game (moves, pass, resign). Not yet: undo, hints, resuming a game after refresh.
 
 ## Structure
 
@@ -10,7 +10,7 @@ Feature-based, not type-based:
 
 ```
 src/
-  features/<feature>/    added incrementally — one folder per feature, currently empty
+  features/<feature>/    one folder per feature: auth/, game/
   shared/
     components/          generic reusable UI
     hooks/
@@ -39,7 +39,7 @@ The dev server talks to a **local** backend, never the deployed API. The session
 - **React 19**, **TypeScript**, **Vite**.
 - **Tailwind CSS v4** via `@tailwindcss/vite`, CSS-first config: `src/index.css` is just `@import "tailwindcss";`. There is no `tailwind.config.js`; customization goes in CSS via `@theme`.
 - **oxlint**, not ESLint (`.oxlintrc.json`, `react`/`typescript`/`oxc` plugins).
-- `VITE_API_BASE_URL` comes from the root `.env` (`http://localhost:5000` locally). Vite only exposes vars prefixed `VITE_`.
+- `VITE_API_BASE_URL` comes from the root `.env` (`http://localhost:5000` locally) — `vite.config.ts` sets `envDir: '..'`. Vite only exposes vars prefixed `VITE_`.
 
 ## The API it consumes
 
