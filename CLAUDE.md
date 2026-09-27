@@ -32,7 +32,7 @@ scripts/    # Dev/infra shell scripts spanning all stacks.
 
 ## Status
 
-The backend implements the full game loop, plus register, login, logout, and a `me` session check. Warmup is incomplete, and the backend has no health endpoints yet — their conditions are decided, see [backend/CLAUDE.md](backend/CLAUDE.md). The engine is v1 complete and containerized. The frontend is an empty scaffold.
+The backend implements the full game loop, plus register, login, logout, and a `me` session check, and answers startup, readiness and liveness probes — what each one does and does not check is in [backend/CLAUDE.md](backend/CLAUDE.md). Warmup is incomplete. The engine is v1 complete. Both are containerized and deployed — see [docs/deployment.md](docs/deployment.md). The frontend is an empty scaffold.
 
 `ICurrentPlayer` reads the signed-in user from the login cookie. Every controller action requires one unless it is marked `[AllowAnonymous]`.
 
