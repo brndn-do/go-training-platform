@@ -36,7 +36,7 @@ The HTTP layer and the composition root. **Controllers**, not minimal API.
 - Request DTOs use nullable properties with `[Required]`.
 - Enums serialize as strings (`JsonStringEnumConverter`, registered in `Program.cs`).
 - `GameResponse.Board` is jagged (`Content[][]`), indexed `[x][y]` to match the domain rather than flipping to row-major.
-- Every response ships the full board.
+- Every single-game response ships the full board. `GET /api/games` is the exception: a `GameSummaryResponse` per game, with no board, most recently changed first, finished games included.
 
 ## Composition root
 

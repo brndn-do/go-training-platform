@@ -23,7 +23,19 @@ public interface IGameRepository
   Task<Game?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
   /// <summary>
-  /// Persists a brand-new game that has never been saved before.
+  /// Lists every game a player owns, finished or not, most recently changed first.
+  /// </summary>
+  /// <param name="playerId">The id of the player whose games to list.</param>
+  /// <param name="cancellationToken">A token to cancel the operation.</param>
+  /// <returns>A summary of each game, empty if the player has none.</returns>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>) or
+  /// refuses the read (<see cref="RepositoryFailureKind.Rejected"/>).
+  /// </exception>
+  Task<IReadOnlyList<GameSummary>> ListByPlayerAsync(Guid playerId, CancellationToken cancellationToken = default);
+
+  /// <summary>
+  /// Persists a brand-new game that has never been saved before, recording when it was created.
   /// </summary>
   /// <param name="game">The game to persist.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>
@@ -35,7 +47,7 @@ public interface IGameRepository
   Task AddAsync(Game game, CancellationToken cancellationToken = default);
 
   /// <summary>
-  /// Persists changes to an existing game.
+  /// Persists changes to an existing game, recording when it last changed.
   /// </summary>
   /// <param name="game">The game to persist.</param>
   /// <param name="cancellationToken">A token to cancel the operation.</param>

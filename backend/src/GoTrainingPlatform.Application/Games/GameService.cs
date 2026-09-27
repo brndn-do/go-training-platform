@@ -4,7 +4,7 @@ using GoTrainingPlatform.Domain.Enums;
 namespace GoTrainingPlatform.Application.Games;
 
 /// <summary>
-/// Persists <see cref="Game"/>'s use cases: start, load, and the four game-actions (move, pass,
+/// Persists <see cref="Game"/>'s use cases: start, load, list, and the four game-actions (move, pass,
 /// undo, resign). Deliberately thin — every rule check (turn order, legality, whether the game
 /// has finished, resignation semantics) is delegated to <see cref="Game"/>'s own <c>Try*</c>
 /// methods, and this class persists only on success. Every use case that touches an existing
@@ -71,6 +71,18 @@ public sealed class GameService(ICurrentPlayer currentPlayer, IGameRepository ga
     game.BuildPosition();
     return game;
   }
+
+  /// <summary>
+  /// Lists every game the current player owns, finished or not, most recently changed first.
+  /// </summary>
+  /// <param name="cancellationToken">A token to cancel the operation.</param>
+  /// <returns>A summary of each game, empty if the player has none.</returns>
+  /// <exception cref="RepositoryException">
+  /// If the store cannot be reached (<see cref="RepositoryFailureKind.Unavailable"/>) or
+  /// refuses the read (<see cref="RepositoryFailureKind.Rejected"/>).
+  /// </exception>
+  public Task<IReadOnlyList<GameSummary>> ListGamesAsync(CancellationToken cancellationToken = default) =>
+    gameRepository.ListByPlayerAsync(currentPlayer.Id, cancellationToken);
 
   /// <summary>
   /// Attempts to record a stone placement for <paramref name="actor"/> and persists it

@@ -2,7 +2,7 @@
 
 Use cases, plus the interfaces the outer layers implement. Depends only on `Domain`.
 
-- `Games/` — `GameService`, `IGameRepository`, `GameActionResult`, `RepositoryException`/`RepositoryFailureKind`.
+- `Games/` — `GameService`, `IGameRepository`, `GameActionResult`, `GameSummary`, `RepositoryException`/`RepositoryFailureKind`.
 - `Orchestration/` — `TurnOrchestrator`, `IEngineClient`, `EngineSuggestion`, `OrchestrationResult`, `EngineException`/`EngineFailureKind`, `InvalidBotResponseException`.
 - `ICurrentPlayer` and `Actor` sit at the project root, being cross-cutting rather than belonging to either folder.
 
@@ -15,6 +15,7 @@ Use cases, plus the interfaces the outer layers implement. Depends only on `Doma
 ## Rules that live here
 
 - Ownership is enforced in `GameService`, right after the load and before any write. A game that doesn't exist and a game a user does not own are treated the same way with `null`.
+- Listing passes the current player's id to the repository; `GameSummary` is read straight from the store, never built from a `Game`, so listing replays no move history.
 - A bot move the domain rejects throws `InvalidBotResponseException` — the engine returning an illegal move is a real failure.
 
 ## Interfaces and failures

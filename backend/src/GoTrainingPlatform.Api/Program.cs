@@ -164,6 +164,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentPlayer, HttpContextCurrentPlayer>();
 
 // Infrastructure
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IGameRepository, GameRepository>();
 
 // Engine

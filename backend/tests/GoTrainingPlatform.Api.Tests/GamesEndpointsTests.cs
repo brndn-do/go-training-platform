@@ -263,6 +263,60 @@ public sealed class GamesEndpointsTests
     Assert.Equal(savesBefore, repository.SaveAsyncCallCount);
   }
 
+  [Fact]
+  public async Task List_NoGames_ReturnsEmptyArray()
+  {
+    using var factory = Factory([]);
+    using var client = factory.CreateClient();
+
+    var response = await client.GetAsync("/api/games");
+
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    Assert.Equal("[]", await response.Content.ReadAsStringAsync());
+  }
+
+  [Fact]
+  public async Task List_SeveralGames_ReturnsSummariesMostRecentlyChangedFirst()
+  {
+    using var factory = Factory([Hint(), Hint(), Hint()]);
+    using var client = factory.CreateClient();
+
+    var older = await StartGameAsync(client);
+    var newer = await StartGameAsync(client);
+
+    // Resigning the older game changes it last, so it moves to the front, finished or not.
+    Assert.Equal(HttpStatusCode.OK, (await client.PostAsync($"/api/games/{older}/resign", null)).StatusCode);
+
+    var response = await client.GetAsync("/api/games");
+
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    var body = await response.Content.ReadAsStringAsync();
+    Assert.DoesNotContain("\"board\":", body);
+
+    var games = await response.Content.ReadFromJsonAsync<List<GameSummaryResponse>>(_options);
+    Assert.NotNull(games);
+    Assert.Equal([older, newer], games.Select(game => game.Id));
+    Assert.Equal(Outcome.PlayerResigned, games[0].Outcome);
+    Assert.Null(games[1].Outcome);
+    Assert.Equal(Color.White, games[1].BotColor);
+    Assert.True(games[0].UpdatedAt > games[0].CreatedAt);
+  }
+
+  [Fact]
+  public async Task List_AnotherUsersGame_IsNotListed()
+  {
+    FakeGameRepository repository = new();
+    using var ownerFactory = Factory([Hint()], repository, userId: Guid.NewGuid());
+    using var ownerClient = ownerFactory.CreateClient();
+    using var otherFactory = Factory([], repository, userId: Guid.NewGuid());
+    using var otherClient = otherFactory.CreateClient();
+    await StartGameAsync(ownerClient);
+
+    var response = await otherClient.GetAsync("/api/games");
+
+    Assert.Equal("[]", await response.Content.ReadAsStringAsync());
+  }
+
   // A suggestion whose contents no test depends on. Away from the corner, so a bot move can
   // never collide with a point a test plays itself.
   private static EngineSuggestion Hint() => new(new Domain.Coordinates(5, 5), 0.5);
