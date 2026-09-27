@@ -7,7 +7,8 @@ namespace GoTrainingPlatform.Api.Controllers;
 
 /// <summary>
 /// The endpoints for playing a game. Every action is taken as the current player, and every
-/// response carries the full board, since the client has no rules engine to derive it.
+/// response for a single game carries the full board, since the client has no rules engine to
+/// derive it.
 /// </summary>
 [ApiController]
 [Route("api/games")]
@@ -34,6 +35,21 @@ public sealed class GamesController(TurnOrchestrator orchestrator, GameService g
     var gameResponse = GameResponse.From(result.Game!, result.Suggestion);
 
     return CreatedAtAction(nameof(Get), new { gameId = gameResponse.Id }, gameResponse);
+  }
+
+  /// <summary>
+  /// Lists every game the current player owns, finished or not, most recently changed first.
+  /// Each entry is a summary without a board, so listing never replays a move history.
+  /// </summary>
+  /// <param name="cancellationToken">A token to cancel the operation.</param>
+  /// <returns>The player's games, empty if they have none.</returns>
+  [HttpGet]
+  [ProducesResponseType(StatusCodes.Status200OK)]
+  public async Task<ActionResult<IReadOnlyList<GameSummaryResponse>>> List(CancellationToken cancellationToken)
+  {
+    var summaries = await gameService.ListGamesAsync(cancellationToken);
+
+    return Ok(summaries.Select(GameSummaryResponse.From).ToList());
   }
 
   /// <summary>

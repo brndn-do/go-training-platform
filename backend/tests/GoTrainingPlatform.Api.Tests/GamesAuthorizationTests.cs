@@ -13,6 +13,7 @@ public sealed class GamesAuthorizationTests(PostgresApiFixture fixture)
   // authentication scheme answers 401 by itself, however the cookie is configured.
   [Theory]
   [InlineData("POST", "/api/games")]
+  [InlineData("GET", "/api/games")]
   [InlineData("GET", "/api/games/{0}")]
   [InlineData("POST", "/api/games/{0}/resume")]
   [InlineData("POST", "/api/games/{0}/moves")]
@@ -41,5 +42,16 @@ public sealed class GamesAuthorizationTests(PostgresApiFixture fixture)
     var response = await client.GetAsync($"/api/games/{Guid.NewGuid()}");
 
     Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+  }
+
+  [Fact]
+  public async Task List_SignedInWithNoGames_ReturnsEmptyArray()
+  {
+    // Runs the list query against a migrated Postgres through the whole host.
+    var client = await fixture.CreateSignedInClientAsync();
+
+    var empty = await client.GetAsync("/api/games");
+    Assert.Equal(HttpStatusCode.OK, empty.StatusCode);
+    Assert.Equal("[]", await empty.Content.ReadAsStringAsync());
   }
 }

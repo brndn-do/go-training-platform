@@ -39,7 +39,7 @@ To pass the full suite: Docker running (Testcontainers), plus a running engine c
 
 - `TurnOrchestrator` decides whether the bot moves next, and sequences human → bot → hint synchronously inside one request. No message bus, no event system.
 - `GameService` delegates every rule check to `Game`'s `Try*` methods and persists only on success.
-- `GET /api/games/{id}` is the one route that skips the orchestrator; `POST {id}/resume` is the read that does advance the bot.
+- `GET /api/games` and `GET /api/games/{id}` are the routes that skip the orchestrator; `POST {id}/resume` is the read that does advance the bot.
 
 ## Invariants
 

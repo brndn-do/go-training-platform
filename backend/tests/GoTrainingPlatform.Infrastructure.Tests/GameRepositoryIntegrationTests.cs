@@ -180,6 +180,105 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
   }
 
   [Fact]
+  public async Task ListByPlayerAsync_NoGames_ReturnsEmpty()
+  {
+    Guid playerId = await SeedPlayerAsync();
+
+    var result = await Repo().ListByPlayerAsync(playerId);
+
+    Assert.Empty(result);
+  }
+
+  [Fact]
+  public async Task ListByPlayerAsync_NewGame_StampsCreatedAndUpdatedAtTheSameTime()
+  {
+    Guid playerId = await SeedPlayerAsync();
+    FakeTimeProvider clock = new();
+    Game game = new(Guid.NewGuid(), playerId, Color.White, 13, null, 6.5, BotStrength.Kyu20);
+    game.BuildPosition();
+
+    await Repo(clock).AddAsync(game);
+
+    var summary = Assert.Single(await Repo().ListByPlayerAsync(playerId));
+    Assert.Equal(
+      new GameSummary(game.Id, Color.White, 13, 6.5, BotStrength.Kyu20, null, 0, clock.UtcNow, clock.UtcNow),
+      summary);
+  }
+
+  [Fact]
+  public async Task ListByPlayerAsync_SavedGame_KeepsCreatedAtAndAdvancesUpdatedAt()
+  {
+    Guid playerId = await SeedPlayerAsync();
+    FakeTimeProvider clock = new();
+    DateTimeOffset created = clock.UtcNow;
+    Game game = new(Guid.NewGuid(), playerId, Color.Black, 9, null);
+    game.BuildPosition();
+    await Repo(clock).AddAsync(game);
+
+    clock.UtcNow = created.AddMinutes(5);
+    var repo = Repo(clock);
+    var loaded = await repo.GetByIdAsync(game.Id);
+    Assert.NotNull(loaded);
+    loaded.BuildPosition();
+    Assert.True(loaded.TryRecordMove(Color.Black, 0, 0));
+    Assert.True(loaded.TryRecordPass(Color.White));
+    await repo.SaveAsync(loaded);
+
+    var summary = Assert.Single(await Repo().ListByPlayerAsync(playerId));
+    Assert.Equal(created, summary.CreatedAt);
+    Assert.Equal(clock.UtcNow, summary.UpdatedAt);
+    Assert.Equal(2, summary.MoveCount);
+  }
+
+  [Fact]
+  public async Task ListByPlayerAsync_SeveralGames_ReturnsAllMostRecentlyChangedFirst()
+  {
+    Guid playerId = await SeedPlayerAsync();
+    FakeTimeProvider clock = new();
+
+    Game oldest = new(Guid.NewGuid(), playerId, Color.Black, 9, null);
+    Game finished = new(Guid.NewGuid(), playerId, Color.Black, 9, null);
+    Game newest = new(Guid.NewGuid(), playerId, Color.Black, 9, null);
+
+    foreach (Game game in new[] { oldest, finished, newest })
+    {
+      game.BuildPosition();
+      await Repo(clock).AddAsync(game);
+      clock.UtcNow = clock.UtcNow.AddMinutes(1);
+    }
+
+    // Resigning the middle game changes it last, so it moves to the front — and a finished
+    // game is still listed.
+    var repo = Repo(clock);
+    var loaded = await repo.GetByIdAsync(finished.Id);
+    Assert.NotNull(loaded);
+    Assert.True(loaded.TryRecordResign(Color.Black));
+    await repo.SaveAsync(loaded);
+
+    var result = await Repo().ListByPlayerAsync(playerId);
+
+    Assert.Equal([finished.Id, newest.Id, oldest.Id], result.Select(summary => summary.Id));
+    Assert.Equal(Outcome.PlayerResigned, result[0].Outcome);
+  }
+
+  [Fact]
+  public async Task ListByPlayerAsync_AnotherPlayersGame_IsNotListed()
+  {
+    Guid playerId = await SeedPlayerAsync();
+    Guid otherPlayerId = await SeedPlayerAsync();
+
+    Game mine = new(Guid.NewGuid(), playerId, Color.Black, 9, null);
+    Game theirs = new(Guid.NewGuid(), otherPlayerId, Color.Black, 9, null);
+    mine.BuildPosition();
+    theirs.BuildPosition();
+    await Repo().AddAsync(mine);
+    await Repo().AddAsync(theirs);
+
+    var summary = Assert.Single(await Repo().ListByPlayerAsync(playerId));
+    Assert.Equal(mine.Id, summary.Id);
+  }
+
+  [Fact]
   public async Task GetByIdAsync_AnotherGamesUndoFreedRowSpace_ReturnsMovesInMoveNumberOrder()
   {
     const int movesPerGame = 300;
@@ -232,7 +331,7 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
   {
     // A read reaches no server at all, so the failure is transient rather than a refusal.
     await using var context = postgresFixture.CreateUnreachableContext();
-    GameRepository repository = new(context);
+    GameRepository repository = new(context, TimeProvider.System);
 
     var exception = await Assert.ThrowsAsync<RepositoryException>(
       () => repository.GetByIdAsync(Guid.NewGuid()));
@@ -244,7 +343,7 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
   public async Task GetByIdAsync_MissingDatabase_ThrowsRejected()
   {
     await using var context = postgresFixture.CreateMissingDatabaseContext();
-    GameRepository repository = new(context);
+    GameRepository repository = new(context, TimeProvider.System);
 
     var exception = await Assert.ThrowsAsync<RepositoryException>(
       () => repository.GetByIdAsync(Guid.NewGuid()));
@@ -253,10 +352,22 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
   }
 
   [Fact]
+  public async Task ListByPlayerAsync_StoreUnreachable_ThrowsUnavailable()
+  {
+    await using var context = postgresFixture.CreateUnreachableContext();
+    GameRepository repository = new(context, TimeProvider.System);
+
+    var exception = await Assert.ThrowsAsync<RepositoryException>(
+      () => repository.ListByPlayerAsync(Guid.NewGuid()));
+
+    Assert.Equal(RepositoryFailureKind.Unavailable, exception.Kind);
+  }
+
+  [Fact]
   public async Task AddAsync_StoreUnreachable_ThrowsUnavailable()
   {
     await using var context = postgresFixture.CreateUnreachableContext();
-    GameRepository repository = new(context);
+    GameRepository repository = new(context, TimeProvider.System);
 
     var exception = await Assert.ThrowsAsync<RepositoryException>(
       () => repository.AddAsync(NewGame()));
@@ -269,7 +380,7 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
   {
     // The server answers and refuses, so the failure will not resolve on its own.
     await using var context = postgresFixture.CreateMissingDatabaseContext();
-    GameRepository repository = new(context);
+    GameRepository repository = new(context, TimeProvider.System);
 
     var exception = await Assert.ThrowsAsync<RepositoryException>(
       () => repository.AddAsync(NewGame()));
@@ -283,7 +394,7 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
     // Fails on the read SaveAsync does before writing, so this only passes if the whole
     // method is guarded rather than just its SaveChangesAsync call.
     await using var context = postgresFixture.CreateUnreachableContext();
-    GameRepository repository = new(context);
+    GameRepository repository = new(context, TimeProvider.System);
 
     var exception = await Assert.ThrowsAsync<RepositoryException>(
       () => repository.SaveAsync(NewGame()));
@@ -295,7 +406,7 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
   public async Task SaveAsync_MissingDatabase_ThrowsRejected()
   {
     await using var context = postgresFixture.CreateMissingDatabaseContext();
-    GameRepository repository = new(context);
+    GameRepository repository = new(context, TimeProvider.System);
 
     var exception = await Assert.ThrowsAsync<RepositoryException>(
       () => repository.SaveAsync(NewGame()));
@@ -347,6 +458,17 @@ public sealed class GameRepositoryIntegrationTests(PostgresFixture postgresFixtu
     await context.Database.ExecuteSqlRawAsync(sql, parameters);
   }
 
+  // Seeds a user of its own, so listing their games sees nothing another test added.
+  private async Task<Guid> SeedPlayerAsync()
+  {
+    Guid playerId = Guid.NewGuid();
+    await using var context = postgresFixture.CreateContext();
+    context.Users.Add(new ApplicationUser { Id = playerId, UserName = $"player-{playerId:N}" });
+    await context.SaveChangesAsync();
+    return playerId;
+  }
+
   // Returns a repository with a fresh context.
-  private GameRepository Repo() => new(postgresFixture.CreateContext());
+  private GameRepository Repo(TimeProvider? timeProvider = null) =>
+    new(postgresFixture.CreateContext(), timeProvider ?? TimeProvider.System);
 }

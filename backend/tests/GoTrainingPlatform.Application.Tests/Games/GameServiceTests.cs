@@ -73,6 +73,26 @@ public sealed class GameServiceTests
   }
 
   [Fact]
+  public async Task ListGamesAsync_NoGames_ReturnsEmpty()
+  {
+    var result = await _gameService.ListGamesAsync();
+
+    Assert.Empty(result);
+  }
+
+  [Fact]
+  public async Task ListGamesAsync_GamesOfSeveralPlayers_ReturnsOnlyTheCurrentPlayers()
+  {
+    var first = await _gameService.StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
+    await ServiceForOtherPlayer().StartGameAsync(Color.Black, 9, BotStrength.Superhuman);
+    var second = await _gameService.StartGameAsync(Color.White, 13, BotStrength.Kyu20);
+
+    var result = await _gameService.ListGamesAsync();
+
+    Assert.Equal([second.Id, first.Id], result.Select(summary => summary.Id));
+  }
+
+  [Fact]
   public async Task MakeMoveAsync_LegalMove_SucceedsAndPersists()
   {
     var game = await _gameService.StartGameAsync(Color.Black, 9, BotStrength.Superhuman);

@@ -12,6 +12,8 @@ Implements `Application`'s interfaces: EF Core behind `IGameRepository`, HTTP be
 - `games.player_id` is a foreign key onto `users`, and deleting a user deletes their games.
 - `Game` is the aggregate; `Moves` is an owned collection mapped to its own `moves` table, keyed `(GameId, MoveNumber)` with `ValueGeneratedNever()`.
 - Concurrency is the `xmin` shadow property plus `IsRowVersion()`.
+- `created_at`/`updated_at` are shadow properties too — storage facts, not domain state. `GameRepository` stamps them from an injected `TimeProvider`: both on `AddAsync`, `updated_at` on every `SaveAsync`. Their `now()` defaults only backfilled rows that predate the columns.
+- `ListByPlayerAsync` projects straight to `GameSummary` in SQL, counting moves in the store, ordered by `(player_id, updated_at)`'s index.
 - `GameRepository.SaveAsync` diffs the owned collection by hand and mutates the tracked collection — see the lessons below.
 - Both load paths go through `LoadAsync`, which checks `context.Games.Local` before querying.
 - Migrations run with **Api** as the EF startup project (`scripts/db-add-migration.sh` to generate, `scripts/db-migrate.sh` to apply), so they build the full host. If it fails to build — for example `ValidateOnBuild` rejecting a registration — EF swallows that into a misleading `DbContextOptions` error rather than naming the cause.
@@ -25,6 +27,7 @@ Implements `Application`'s interfaces: EF Core behind `IGameRepository`, HTTP be
 `Infrastructure.Tests` runs against a real Postgres from Testcontainers, migrated with the real EF Core migrations — no in-memory provider.
 
 - `PostgresFixture` is shared across the `"Postgres"` collection and hands out a **fresh** `DbContext` per call.
+- The fixture's one seeded player accumulates every test's games, so a test that lists games seeds a player of its own. `FakeTimeProvider` pins the clock to whole seconds, which survive Postgres's microsecond timestamps.
 - It also builds deliberately-broken contexts (`CreateUnreachableContext`, `CreateMissingDatabaseContext`) covering both sides of the transient/permanent split.
 - `EngineClientIntegrationTests` needs a running engine; `Engine__BaseUrl` comes from the repo-root `.env`, which the test assembly loads itself. Without the engine, four tests fail, and the message distinguishes unreachable from running-but-not-ready.
 

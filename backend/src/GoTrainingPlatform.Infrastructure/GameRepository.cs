@@ -8,7 +8,7 @@ namespace GoTrainingPlatform.Infrastructure;
 /// <summary>
 /// EF Core implementation of <see cref="IGameRepository"/>.
 /// </summary>
-public sealed class GameRepository(GoTrainingPlatformDbContext context) : IGameRepository
+public sealed class GameRepository(GoTrainingPlatformDbContext context, TimeProvider timeProvider) : IGameRepository
 {
   /// <inheritdoc/>
   public async Task<Game?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -24,11 +24,45 @@ public sealed class GameRepository(GoTrainingPlatformDbContext context) : IGameR
   }
 
   /// <inheritdoc/>
+  public async Task<IReadOnlyList<GameSummary>> ListByPlayerAsync(Guid playerId, CancellationToken cancellationToken = default)
+  {
+    try
+    {
+      // Projected in the query, so the move history is counted by the store and never loaded.
+      return await context.Games
+        .AsNoTracking()
+        .Where(game => game.PlayerId == playerId)
+        .OrderByDescending(game => EF.Property<DateTimeOffset>(game, GameConfiguration.UpdatedAt))
+        .ThenBy(game => game.Id)
+        .Select(game => new GameSummary(
+          game.Id,
+          game.PlayerColor,
+          game.BoardSize,
+          game.Komi,
+          game.BotStrength,
+          game.Outcome,
+          game.Moves.Count,
+          EF.Property<DateTimeOffset>(game, GameConfiguration.CreatedAt),
+          EF.Property<DateTimeOffset>(game, GameConfiguration.UpdatedAt)))
+        .ToListAsync(cancellationToken);
+    }
+    catch (Exception ex) when (Translate(ex, "Listing games") is { } failure)
+    {
+      throw failure;
+    }
+  }
+
+  /// <inheritdoc/>
   public async Task AddAsync(Game game, CancellationToken cancellationToken = default)
   {
     try
     {
-      await context.Games.AddAsync(game, cancellationToken);
+      var entry = await context.Games.AddAsync(game, cancellationToken);
+
+      DateTimeOffset now = timeProvider.GetUtcNow();
+      entry.Property(GameConfiguration.CreatedAt).CurrentValue = now;
+      entry.Property(GameConfiguration.UpdatedAt).CurrentValue = now;
+
       await context.SaveChangesAsync(cancellationToken);
     }
     catch (Exception ex) when (Translate(ex, "Adding a game") is { } failure)
@@ -68,6 +102,9 @@ public sealed class GameRepository(GoTrainingPlatformDbContext context) : IGameR
       {
         trackedMoves.Add(move);
       }
+
+      // Stamped on every save, including one that only changed moves.
+      context.Entry(existing).Property(GameConfiguration.UpdatedAt).CurrentValue = timeProvider.GetUtcNow();
 
       await context.SaveChangesAsync(cancellationToken);
     }

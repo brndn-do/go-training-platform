@@ -10,6 +10,10 @@ namespace GoTrainingPlatform.Application.Tests.Games;
 public sealed class FakeGameRepository : IGameRepository
 {
   private readonly Dictionary<Guid, Game> _games = [];
+  private readonly Dictionary<Guid, (DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt)> _times = [];
+
+  // Advances on every write, so each one is strictly later than the last without a real clock.
+  private DateTimeOffset _now = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
   /// <summary>
   /// Gets the number of times <see cref="SaveAsync"/> was called. Since this fake stores
@@ -28,9 +32,32 @@ public sealed class FakeGameRepository : IGameRepository
   }
 
   /// <inheritdoc/>
+  public Task<IReadOnlyList<GameSummary>> ListByPlayerAsync(Guid playerId, CancellationToken cancellationToken = default)
+  {
+    IReadOnlyList<GameSummary> summaries = [.. _games.Values
+      .Where(game => game.PlayerId == playerId)
+      .Select(game => new GameSummary(
+        game.Id,
+        game.PlayerColor,
+        game.BoardSize,
+        game.Komi,
+        game.BotStrength,
+        game.Outcome,
+        game.Moves.Count,
+        _times[game.Id].CreatedAt,
+        _times[game.Id].UpdatedAt))
+      .OrderByDescending(summary => summary.UpdatedAt)
+      .ThenBy(summary => summary.Id)];
+
+    return Task.FromResult(summaries);
+  }
+
+  /// <inheritdoc/>
   public Task AddAsync(Game game, CancellationToken cancellationToken = default)
   {
     _games[game.Id] = game;
+    DateTimeOffset now = Tick();
+    _times[game.Id] = (now, now);
     return Task.CompletedTask;
   }
 
@@ -38,7 +65,10 @@ public sealed class FakeGameRepository : IGameRepository
   public Task SaveAsync(Game game, CancellationToken cancellationToken = default)
   {
     _games[game.Id] = game;
+    _times[game.Id] = (_times[game.Id].CreatedAt, Tick());
     SaveAsyncCallCount++;
     return Task.CompletedTask;
   }
+
+  private DateTimeOffset Tick() => _now = _now.AddSeconds(1);
 }
